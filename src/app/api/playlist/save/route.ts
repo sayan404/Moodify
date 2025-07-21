@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       {
         access_token: session.accessToken,
         token_type: "Bearer",
-        expires_in: 3600,
+        expires_in: 3600000,
         refresh_token: "",
       }
     );

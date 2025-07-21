@@ -50,7 +50,12 @@ export async function POST(request: Request) {
     // Initialize Spotify API
     const spotify = SpotifyApi.withAccessToken(
       process.env.SPOTIFY_CLIENT_ID!,
-      session.accessToken as string
+      {
+        access_token: session.accessToken,
+        token_type: "Bearer",
+        expires_in: 3600000,
+        refresh_token: "",
+      }
     );
 
     // Get recommendations based on mood
