@@ -60,7 +60,9 @@ export async function POST(request: Request) {
   const geminiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || geminiData.candidates?.[0]?.content?.text || "";
   let aiResult;
   try {
-    aiResult = JSON.parse(geminiText);
+    // Remove code block markers if present
+    const cleaned = geminiText.replace(/```json|```/g, '').trim();
+    aiResult = JSON.parse(cleaned);
     console.log("[AI-Playlist] Gemini AI result:", aiResult);
   } catch {
     console.log("[AI-Playlist] Gemini response parse error:", geminiText);
