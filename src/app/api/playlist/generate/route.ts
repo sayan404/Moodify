@@ -95,44 +95,49 @@ export async function POST(request: Request) {
 
     // Initialize Spotify API with proper scopes
     console.log('Initializing Spotify API with token');
-    const spotify = SpotifyApi.withAccessToken(
-      process.env.SPOTIFY_CLIENT_ID!,
-      {
-        access_token: session.accessToken,
-        token_type: "Bearer",
-        expires_in: 3600000,
-        refresh_token: "",
-      }
-    );
-
+    
+    // Make direct fetch call to Spotify API
     try {
-      // Get recommendations directly without fetching genres
-      console.log('Requesting Spotify recommendations with params:', {
-        limit: 20,
-        seed_genres: attributes.seed_genres.slice(0, 5),
-        target_valence: attributes.target_valence,
-        target_energy: attributes.target_energy,
-        target_tempo: attributes.target_tempo,
+      const params = new URLSearchParams({
+        limit: '20',
+        seed_genres: attributes.seed_genres.slice(0, 5).join(','),
+        target_valence: attributes.target_valence.toString(),
+        target_energy: attributes.target_energy.toString(),
+        target_tempo: attributes.target_tempo.toString(),
       });
 
-      const recommendations = await spotify.recommendations.get({
-        limit: 20,
-        seed_genres: attributes.seed_genres.slice(0, 5),
-        target_valence: attributes.target_valence,
-        target_energy: attributes.target_energy,
-        target_tempo: attributes.target_tempo,
+      console.log('Requesting Spotify recommendations with params:', Object.fromEntries(params));
+
+      const response = await fetch(
+        `https://api.spotify.com/v1/recommendations?${params.toString()}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Spotify API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: await response.text(),
+        });
+        throw new Error(`Spotify API error: ${response.status} ${response.statusText}`);
+      }
+
+      const recommendations = await response.json();
+      console.log('Received recommendations:', {
+        trackCount: recommendations.tracks?.length || 0,
+        firstTrack: recommendations.tracks?.[0]?.name,
+        genres: attributes.seed_genres.slice(0, 5),
       });
 
       if (!recommendations.tracks || recommendations.tracks.length === 0) {
         console.log('No tracks found in recommendations');
         throw new Error("No tracks found for the given mood");
       }
-
-      console.log('Received recommendations:', {
-        trackCount: recommendations.tracks.length,
-        firstTrack: recommendations.tracks[0]?.name,
-        genres: attributes.seed_genres.slice(0, 5),
-      });
 
       // Create playlist with tracks
       const result = await prisma.$transaction(async (tx) => {
@@ -176,7 +181,6 @@ export async function POST(request: Request) {
           )}
         `;
 
-        // Return combined result
         return {
           ...playlist,
           tracks: tracksData,
@@ -192,14 +196,14 @@ export async function POST(request: Request) {
         },
       });
 
-    } catch (spotifyError) {
-      console.error('Spotify API Error details:', {
-        error: spotifyError,
-        message: spotifyError.message,
-        stack: spotifyError.stack,
+    } catch (error) {
+      console.error('Error details:', {
+        error,
+        message: error.message,
+        stack: error.stack,
       });
       return NextResponse.json(
-        { error: "Failed to get recommendations from Spotify" },
+        { error: "Failed to generate playlist" },
         { status: 500 }
       );
     }
