@@ -11,93 +11,99 @@ const SPOTIFY_SCOPES = [
   "user-library-read",
 ].join(" ");
 
+if (!process.env.SPOTIFY_CLIENT_ID) {
+  throw new Error("Missing SPOTIFY_CLIENT_ID");
+}
+
+if (!process.env.SPOTIFY_CLIENT_SECRET) {
+  throw new Error("Missing SPOTIFY_CLIENT_SECRET");
+}
+
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error("Missing NEXTAUTH_SECRET");
+}
+
 export const options: NextAuthOptions = {
   providers: [
     SpotifyProvider({
-      clientId: process.env.SPOTIFY_CLIENT_ID!,
-      clientSecret: process.env.SPOTIFY_CLIENT_SECRET!,
+      clientId: process.env.SPOTIFY_CLIENT_ID,
+      clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
       authorization: {
         params: { scope: SPOTIFY_SCOPES },
       },
     }),
   ],
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('Sign in attempt:', {
-        email: user.email,
-        provider: account?.provider,
-        timestamp: new Date().toISOString(),
-      });
+      if (!account || !profile) {
+        return false;
+      }
       return true;
     },
-    async jwt({ token, account }) {
-      console.log('JWT callback:', {
-        email: token.email,
-        timestamp: new Date().toISOString(),
-      });
-
+    async jwt({ token, account, profile }) {
       if (account) {
-        console.log('Updating token with account info:', {
-          accessToken: account.access_token ? 'Present' : 'Missing',
-          refreshToken: account.refresh_token ? 'Present' : 'Missing',
-          expiresAt: account.expires_at,
-        });
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
+        token.accessTokenExpires = Date.now() + (account.expires_in as number) * 1000;
       }
+
+      // If token has not expired, return it
+      if (token.accessTokenExpires && Date.now() < token.accessTokenExpires) {
+        return token;
+      }
+
+      // If token has expired, try to refresh it
+      if (token.refreshToken) {
+        try {
+          const response = await fetch("https://accounts.spotify.com/api/token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              Authorization: `Basic ${Buffer.from(
+                `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+              ).toString("base64")}`,
+            },
+            body: new URLSearchParams({
+              grant_type: "refresh_token",
+              refresh_token: token.refreshToken,
+            }),
+          });
+
+          const tokens = await response.json();
+
+          if (!response.ok) throw tokens;
+
+          return {
+            ...token,
+            accessToken: tokens.access_token,
+            accessTokenExpires: Date.now() + (tokens.expires_in as number) * 1000,
+            refreshToken: tokens.refresh_token ?? token.refreshToken,
+          };
+        } catch (error) {
+          console.error("Error refreshing access token", error);
+          return { ...token, error: "RefreshAccessTokenError" };
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
-      console.log('Session callback:', {
-        email: session.user?.email,
-        timestamp: new Date().toISOString(),
-      });
-
-      return {
-        ...session,
-        accessToken: token.accessToken,
-      };
-    },
-    async redirect({ url, baseUrl }) {
-      console.log('Redirect callback:', {
-        url,
-        baseUrl,
-        timestamp: new Date().toISOString(),
-      });
-      return url.startsWith(baseUrl) ? url : baseUrl;
-    },
-  },
-  events: {
-    async signIn(message) {
-      console.log('User signed in:', {
-        email: message.user.email,
-        timestamp: new Date().toISOString(),
-      });
-    },
-    async signOut(message) {
-      console.log('User signed out:', {
-        email: message.token.email,
-        timestamp: new Date().toISOString(),
-      });
-    },
-    async createUser(message) {
-      console.log('New user created:', {
-        email: message.user.email,
-        timestamp: new Date().toISOString(),
-      });
-    },
-    async linkAccount(message) {
-      console.log('Account linked:', {
-        provider: message.account.provider,
-        timestamp: new Date().toISOString(),
-      });
+      if (token.accessToken) {
+        session.accessToken = token.accessToken as string;
+        if (token.error) {
+          session.error = token.error as string;
+        }
+      }
+      return session;
     },
   },
   pages: {
     signIn: "/login",
   },
-  session: {
-    strategy: "jwt",
-  },
-  debug: process.env.NODE_ENV === 'development',
+  debug: process.env.NODE_ENV === "development",
 }; 
