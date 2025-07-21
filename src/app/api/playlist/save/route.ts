@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { getServerSession, Session } from "next-auth";
+import { options } from "../../auth/[...nextauth]/options";
 import { PrismaClient } from "@prisma/client";
-import { SpotifyApi } from "@spotify/web-api-ts-sdk";
+import { SpotifyApi, AccessToken } from "@spotify/web-api-ts-sdk";
 
 const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const session = await getServerSession(options) as Session;
+    if (!session?.user?.id || !session.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { playlistId } = await request.json();
-    if (!playlistId) {
+    const { playlistId, tracks } = await request.json();
+    if (!playlistId || !tracks) {
       return NextResponse.json(
-        { error: "Playlist ID is required" },
+        { error: "Playlist ID and tracks are required" },
         { status: 400 }
       );
     }
@@ -36,7 +36,12 @@ export async function POST(request: Request) {
     // Initialize Spotify API
     const spotify = SpotifyApi.withAccessToken(
       process.env.SPOTIFY_CLIENT_ID!,
-      session.accessToken as string
+      {
+        access_token: session.accessToken,
+        token_type: "Bearer",
+        expires_in: 3600,
+        refresh_token: "",
+      }
     );
 
     // Create playlist on Spotify
@@ -50,10 +55,12 @@ export async function POST(request: Request) {
     );
 
     // Add tracks to the playlist
-    await spotify.playlists.addItemsToPlaylist(
-      spotifyPlaylist.id,
-      playlist.tracks.map((track) => `spotify:track:${track.id}`)
-    );
+    if (tracks.length > 0) {
+      await spotify.playlists.addItemsToPlaylist(
+        spotifyPlaylist.id,
+        tracks.map((track: { id: string }) => `spotify:track:${track.id}`)
+      );
+    }
 
     // Update playlist in database with Spotify ID
     await prisma.playlist.update({

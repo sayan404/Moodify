@@ -28,10 +28,24 @@ model Playlist {
   name             String
   spotifyPlaylistId String  @unique
   sentiment        String?
+  tracks           Track[]
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model Track {
+  id        String   @id @default(cuid())
+  spotifyId String
+  name      String
+  artists   String[]
+  albumName String
+  duration  Int
+  playlist  Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  playlistId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SongPreference {
