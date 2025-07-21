@@ -11,35 +11,35 @@ const analyzer = new sentiment();
 // Mood to music attributes mapping
 const moodToAttributes = {
   positive: {
-    minValence: 0.6,
-    minEnergy: 0.5,
-    targetTempo: 120,
+    min_valence: 0.6,
+    min_energy: 0.5,
+    target_tempo: 120,
+    seed_genres: ["pop", "dance", "happy"],
   },
   negative: {
-    maxValence: 0.4,
-    maxEnergy: 0.4,
-    targetTempo: 90,
+    max_valence: 0.4,
+    max_energy: 0.4,
+    target_tempo: 90,
+    seed_genres: ["acoustic", "ambient", "sad"],
   },
   neutral: {
-    targetValence: 0.5,
-    targetEnergy: 0.5,
-    targetTempo: 100,
+    target_valence: 0.5,
+    target_energy: 0.5,
+    target_tempo: 100,
+    seed_genres: ["pop", "rock", "indie"],
   },
 };
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(options);
-    if (!session?.user) {
+    if (!session?.user?.id || !session.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { moodText } = await request.json();
     if (!moodText) {
-      return NextResponse.json(
-        { error: "Mood text is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Mood text is required" }, { status: 400 });
     }
 
     // Analyze sentiment
@@ -58,40 +58,68 @@ export async function POST(request: Request) {
       }
     );
 
-    // Get recommendations based on mood
-    const recommendations = await spotify.recommendations.get({
-      limit: 20,
-      ...attributes,
-      seed_genres: ["pop", "rock", "indie", "electronic"],
-    });
+    try {
+      // Get available genres
+      const { genres } = await spotify.recommendations.genreSeeds();
+      const validGenres = attributes.seed_genres.filter(genre => genres.includes(genre));
+      
+      // Get recommendations
+      const recommendations = await spotify.recommendations.get({
+        limit: 20,
+        seed_genres: validGenres.length > 0 ? validGenres : ["pop"],
+        ...attributes,
+      });
 
-    // Format tracks
-    const tracks = recommendations.tracks.map((track) => ({
-      id: track.id,
-      name: track.name,
-      artists: track.artists.map((artist) => artist.name),
-      albumName: track.album.name,
-      duration: track.duration_ms,
-    }));
+      if (!recommendations.tracks || recommendations.tracks.length === 0) {
+        throw new Error("No tracks found for the given mood");
+      }
 
-    // Create playlist in database
-    const playlist = await prisma.playlist.create({
-      data: {
-        name: `${mood.charAt(0).toUpperCase() + mood.slice(1)} Vibes`,
-        spotifyPlaylistId: "", // Will be set when saved to Spotify
-        sentiment: mood,
-        userId: session.user.id,
-      },
-    });
+      // Step 1: Create playlist
+      const playlist = await prisma.playlist.create({
+        data: {
+          name: `${mood.charAt(0).toUpperCase() + mood.slice(1)} Vibes`,
+          spotifyPlaylistId: "",
+          sentiment: mood,
+          userId: session.user.id,
+        },
+      });
 
-    return NextResponse.json({
-      playlist: {
-        id: playlist.id,
-        name: playlist.name,
-        tracks,
-        mood,
-      },
-    });
+      // Step 2: Create tracks one by one
+      const createdTracks = [];
+      for (const track of recommendations.tracks) {
+        const createdTrack = await prisma.$queryRaw`
+          INSERT INTO "tracks" ("id", "spotifyId", "name", "artists", "albumName", "duration", "playlistId", "createdAt", "updatedAt")
+          VALUES (
+            gen_random_uuid(),
+            ${track.id},
+            ${track.name},
+            ${track.artists.map(artist => artist.name)},
+            ${track.album.name},
+            ${track.duration_ms},
+            ${playlist.id},
+            NOW(),
+            NOW()
+          )
+          RETURNING *;
+        `;
+        createdTracks.push(createdTrack[0]);
+      }
+
+      return NextResponse.json({
+        playlist: {
+          id: playlist.id,
+          name: playlist.name,
+          tracks: createdTracks,
+          mood,
+        },
+      });
+    } catch (spotifyError) {
+      console.error("Spotify API Error:", spotifyError);
+      return NextResponse.json(
+        { error: "Failed to get recommendations from Spotify" },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Error generating playlist:", error);
     return NextResponse.json(
