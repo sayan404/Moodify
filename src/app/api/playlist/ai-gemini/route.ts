@@ -1,17 +1,27 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { options } from "../../auth/[...nextauth]/options";
+import fetch from "node-fetch";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
 
 export async function POST(request: Request) {
+  console.log("[AI-Playlist] Start request");
   const session = await getServerSession(options);
+  console.log("[AI-Playlist] Session:", session ? {
+    user: session.user,
+    accessToken: session.accessToken ? 'Present' : 'Missing',
+  } : 'No session');
+
   if (!session?.user || !session.accessToken) {
+    console.log("[AI-Playlist] Unauthorized");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { moodText } = await request.json();
+  console.log("[AI-Playlist] User input:", moodText);
   if (!moodText) {
+    console.log("[AI-Playlist] No mood text provided");
     return NextResponse.json({ error: "Mood text is required" }, { status: 400 });
   }
 
@@ -36,21 +46,25 @@ export async function POST(request: Request) {
       ]
     }
   `;
+  console.log("[AI-Playlist] Gemini prompt:", geminiPrompt);
 
-  const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY, {
+  const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts: [{ text: geminiPrompt }] }]
     }),
   });
-
+  console.log("[AI-Playlist] Gemini API status:", geminiRes.status);
   const geminiData = await geminiRes.json();
+  console.log("[AI-Playlist] Gemini API response:", geminiData);
   const geminiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || geminiData.candidates?.[0]?.content?.text || "";
   let aiResult;
   try {
     aiResult = JSON.parse(geminiText);
+    console.log("[AI-Playlist] Gemini AI result:", aiResult);
   } catch {
+    console.log("[AI-Playlist] Gemini response parse error:", geminiText);
     return NextResponse.json({ error: "Gemini response parse error", raw: geminiText }, { status: 500 });
   }
 
@@ -58,10 +72,13 @@ export async function POST(request: Request) {
   const foundTracks: { id: string, uri: string, name: string, artist: string }[] = [];
   for (const song of aiResult.suggested_songs || []) {
     const q = encodeURIComponent(`${song.title} ${song.artist}`);
+    console.log("[AI-Playlist] Searching Spotify for:", song.title, "by", song.artist);
     const searchRes = await fetch(`https://api.spotify.com/v1/search?q=${q}&type=track&limit=1`, {
       headers: { Authorization: `Bearer ${session.accessToken}` }
     });
+    console.log("[AI-Playlist] Spotify search status:", searchRes.status);
     const searchData = await searchRes.json();
+    console.log("[AI-Playlist] Spotify search data:", searchData);
     const track = searchData.tracks?.items?.[0];
     if (track) {
       foundTracks.push({
@@ -70,14 +87,19 @@ export async function POST(request: Request) {
         name: track.name,
         artist: track.artists.map((a: any) => a.name).join(", ")
       });
+      console.log("[AI-Playlist] Found track:", track.name, "by", track.artists.map((a: any) => a.name).join(", "));
+    } else {
+      console.log("[AI-Playlist] No track found for:", song.title, song.artist);
     }
   }
 
   if (foundTracks.length === 0) {
+    console.log("[AI-Playlist] No tracks found from AI suggestions", aiResult);
     return NextResponse.json({ error: "No tracks found from AI suggestions", aiResult }, { status: 404 });
   }
 
   // 3. Create a playlist
+  console.log("[AI-Playlist] Creating playlist for user:", session.user.id);
   const playlistRes = await fetch(`https://api.spotify.com/v1/users/${session.user.id}/playlists`, {
     method: "POST",
     headers: {
@@ -90,14 +112,20 @@ export async function POST(request: Request) {
       public: false
     })
   });
+  console.log("[AI-Playlist] Playlist creation status:", playlistRes.status);
   const playlistData = await playlistRes.json();
+  console.log("[AI-Playlist] Playlist data:", playlistData);
 
   // 4. Add tracks to the playlist
-  await fetch(`https://api.spotify.com/v1/playlists/${playlistData.id}/tracks`, {
+  console.log("[AI-Playlist] Adding tracks to playlist:", foundTracks.map(t => t.uri));
+  const addTracksRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistData.id}/tracks`, {
     method: "POST",
     headers: { Authorization: `Bearer ${session.accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({ uris: foundTracks.map(t => t.uri) })
   });
+  console.log("[AI-Playlist] Add tracks status:", addTracksRes.status);
+  const addTracksData = await addTracksRes.json();
+  console.log("[AI-Playlist] Add tracks response:", addTracksData);
 
   return NextResponse.json({
     playlist: {
