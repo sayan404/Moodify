@@ -31,14 +31,14 @@ const AVAILABLE_GENRES = [
 // Mood to music attributes mapping
 const moodToAttributes = {
   positive: {
-    min_valence: 0.6,
-    min_energy: 0.5,
+    target_valence: 0.8,
+    target_energy: 0.8,
     target_tempo: 120,
     seed_genres: ["dance", "pop", "power-pop", "work-out", "edm"],
   },
   negative: {
-    max_valence: 0.4,
-    max_energy: 0.4,
+    target_valence: 0.2,
+    target_energy: 0.2,
     target_tempo: 90,
     seed_genres: ["acoustic", "ambient", "rainy-day", "sleep", "study"],
   },
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     const attributes = moodToAttributes[mood];
     console.log('Selected music attributes:', attributes);
 
-    // Initialize Spotify API
+    // Initialize Spotify API with proper scopes
     console.log('Initializing Spotify API with token');
     const spotify = SpotifyApi.withAccessToken(
       process.env.SPOTIFY_CLIENT_ID!,
@@ -106,34 +106,33 @@ export async function POST(request: Request) {
     );
 
     try {
-      // Filter seed genres to only include available ones
-      const validGenres = attributes.seed_genres.filter(genre => 
-        AVAILABLE_GENRES.includes(genre)
-      );
-      console.log('Selected valid genres:', validGenres);
-      
-      // Get recommendations
+      // Get recommendations directly without fetching genres
       console.log('Requesting Spotify recommendations with params:', {
         limit: 20,
-        seed_genres: validGenres.length > 0 ? validGenres : ["pop"],
-        ...attributes,
+        seed_genres: attributes.seed_genres.slice(0, 5),
+        target_valence: attributes.target_valence,
+        target_energy: attributes.target_energy,
+        target_tempo: attributes.target_tempo,
       });
 
       const recommendations = await spotify.recommendations.get({
         limit: 20,
-        seed_genres: validGenres.slice(0, 5), // Spotify only accepts up to 5 seed genres
-        ...attributes,
-      });
-
-      console.log('Received recommendations:', {
-        trackCount: recommendations.tracks?.length || 0,
-        firstTrack: recommendations.tracks?.[0]?.name,
+        seed_genres: attributes.seed_genres.slice(0, 5),
+        target_valence: attributes.target_valence,
+        target_energy: attributes.target_energy,
+        target_tempo: attributes.target_tempo,
       });
 
       if (!recommendations.tracks || recommendations.tracks.length === 0) {
         console.log('No tracks found in recommendations');
         throw new Error("No tracks found for the given mood");
       }
+
+      console.log('Received recommendations:', {
+        trackCount: recommendations.tracks.length,
+        firstTrack: recommendations.tracks[0]?.name,
+        genres: attributes.seed_genres.slice(0, 5),
+      });
 
       // Create playlist with tracks
       const result = await prisma.$transaction(async (tx) => {
