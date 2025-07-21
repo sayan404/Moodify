@@ -1,7 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import NextAuth from "next-auth/next";
 import SpotifyProvider from "next-auth/providers/spotify";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -14,7 +13,6 @@ const SPOTIFY_SCOPES = [
 ].join(" ");
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     SpotifyProvider({
       clientId: process.env.SPOTIFY_CLIENT_ID!,
@@ -25,18 +23,75 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      console.log('Sign in attempt:', {
+        email: user.email,
+        provider: account?.provider,
+        timestamp: new Date().toISOString(),
+      });
+      return true;
+    },
     async jwt({ token, account }) {
+      console.log('JWT callback:', {
+        email: token.email,
+        timestamp: new Date().toISOString(),
+      });
+
       if (account) {
+        console.log('Updating token with account info:', {
+          accessToken: account.access_token ? 'Present' : 'Missing',
+          refreshToken: account.refresh_token ? 'Present' : 'Missing',
+          expiresAt: account.expires_at,
+        });
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
       }
       return token;
     },
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
-      }
-      return session;
+    async session({ session, token }) {
+      console.log('Session callback:', {
+        email: session.user?.email,
+        timestamp: new Date().toISOString(),
+      });
+
+      return {
+        ...session,
+        accessToken: token.accessToken,
+      };
+    },
+    async redirect({ url, baseUrl }) {
+      console.log('Redirect callback:', {
+        url,
+        baseUrl,
+        timestamp: new Date().toISOString(),
+      });
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
+  },
+  events: {
+    async signIn(message) {
+      console.log('User signed in:', {
+        email: message.user.email,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    async signOut(message) {
+      console.log('User signed out:', {
+        email: message.token.email,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    async createUser(message) {
+      console.log('New user created:', {
+        email: message.user.email,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    async linkAccount(message) {
+      console.log('Account linked:', {
+        provider: message.account.provider,
+        timestamp: new Date().toISOString(),
+      });
     },
   },
   pages: {
@@ -45,6 +100,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  debug: process.env.NODE_ENV === 'development',
 };
 
 const handler = NextAuth(authOptions);

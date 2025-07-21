@@ -20,3 +20,5 @@ prisma/dev.db-trace-wal
 prisma/dev.db-trace-wal-journal
 package-lock.json
 yarn.lock
+yarn-error.log
+.next

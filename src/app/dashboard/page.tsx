@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
-import MoodInput from "@/components/playlist/MoodInput";
-import PlaylistDisplay from "@/components/playlist/PlaylistDisplay";
+import MoodInput from "../../components/playlist/MoodInput";
+import PlaylistDisplay from "../../components/playlist/PlaylistDisplay";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
