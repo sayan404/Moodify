@@ -1,12 +1,32 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { options } from "../../auth/[...nextauth]/options";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import sentiment from "sentiment";
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
+import { randomUUID } from "crypto";
 
 const prisma = new PrismaClient();
 const analyzer = new sentiment();
+
+// Predefined genres since genre seeds endpoint is not accessible
+const AVAILABLE_GENRES = [
+  "acoustic", "afrobeat", "alt-rock", "alternative", "ambient", "anime", "black-metal",
+  "bluegrass", "blues", "bossanova", "brazil", "breakbeat", "british", "cantopop", "chicago-house",
+  "children", "chill", "classical", "club", "comedy", "country", "dance", "dancehall", "death-metal",
+  "deep-house", "detroit-techno", "disco", "disney", "drum-and-bass", "dub", "dubstep", "edm",
+  "electro", "electronic", "emo", "folk", "forro", "french", "funk", "garage", "german", "gospel",
+  "goth", "grindcore", "groove", "grunge", "guitar", "happy", "hard-rock", "hardcore", "hardstyle",
+  "heavy-metal", "hip-hop", "holidays", "honky-tonk", "house", "idm", "indian", "indie", "indie-pop",
+  "industrial", "iranian", "j-dance", "j-idol", "j-pop", "j-rock", "jazz", "k-pop", "kids", "latin",
+  "latino", "malay", "mandopop", "metal", "metal-misc", "metalcore", "minimal-techno", "movies",
+  "mpb", "new-age", "new-release", "opera", "pagode", "party", "philippines-opm", "piano", "pop",
+  "pop-film", "post-dubstep", "power-pop", "progressive-house", "psych-rock", "punk", "punk-rock",
+  "r-n-b", "rainy-day", "reggae", "reggaeton", "road-trip", "rock", "rock-n-roll", "rockabilly",
+  "romance", "sad", "salsa", "samba", "sertanejo", "show-tunes", "singer-songwriter", "ska",
+  "sleep", "songwriter", "soul", "soundtracks", "spanish", "study", "summer", "swedish", "synth-pop",
+  "tango", "techno", "trance", "trip-hop", "turkish", "work-out", "world-music"
+];
 
 // Mood to music attributes mapping
 const moodToAttributes = {
@@ -14,19 +34,19 @@ const moodToAttributes = {
     min_valence: 0.6,
     min_energy: 0.5,
     target_tempo: 120,
-    seed_genres: ["pop", "dance", "happy"],
+    seed_genres: ["dance", "pop", "power-pop", "work-out", "edm"],
   },
   negative: {
     max_valence: 0.4,
     max_energy: 0.4,
     target_tempo: 90,
-    seed_genres: ["acoustic", "ambient", "sad"],
+    seed_genres: ["acoustic", "ambient", "rainy-day", "sleep", "study"],
   },
   neutral: {
     target_valence: 0.5,
     target_energy: 0.5,
     target_tempo: 100,
-    seed_genres: ["pop", "rock", "indie"],
+    seed_genres: ["pop", "rock", "indie", "alternative", "electronic"],
   },
 };
 
@@ -86,12 +106,10 @@ export async function POST(request: Request) {
     );
 
     try {
-      // Get available genres
-      console.log('Fetching available Spotify genres...');
-      const { genres } = await spotify.recommendations.genreSeeds();
-      console.log('Available genres:', genres);
-
-      const validGenres = attributes.seed_genres.filter(genre => genres.includes(genre));
+      // Filter seed genres to only include available ones
+      const validGenres = attributes.seed_genres.filter(genre => 
+        AVAILABLE_GENRES.includes(genre)
+      );
       console.log('Selected valid genres:', validGenres);
       
       // Get recommendations
@@ -103,7 +121,7 @@ export async function POST(request: Request) {
 
       const recommendations = await spotify.recommendations.get({
         limit: 20,
-        seed_genres: validGenres.length > 0 ? validGenres : ["pop"],
+        seed_genres: validGenres.slice(0, 5), // Spotify only accepts up to 5 seed genres
         ...attributes,
       });
 
@@ -117,45 +135,64 @@ export async function POST(request: Request) {
         throw new Error("No tracks found for the given mood");
       }
 
-      // Step 1: Create playlist
-      const playlist = await prisma.playlist.create({
-        data: {
-          name: `${mood.charAt(0).toUpperCase() + mood.slice(1)} Vibes`,
-          spotifyPlaylistId: "",
-          sentiment: mood,
-          userId: session.user.id,
-        },
-      });
+      // Create playlist with tracks
+      const result = await prisma.$transaction(async (tx) => {
+        // Create the playlist
+        const playlist = await tx.playlist.create({
+          data: {
+            name: `${mood.charAt(0).toUpperCase() + mood.slice(1)} Vibes`,
+            spotifyPlaylistId: "",
+            sentiment: mood,
+            userId: session.user.id,
+          },
+        });
 
-      // Step 2: Create tracks one by one
-      const createdTracks = [];
-      for (const track of recommendations.tracks) {
-        const createdTrack = await prisma.$queryRaw`
-          INSERT INTO "tracks" ("id", "spotifyId", "name", "artists", "albumName", "duration", "playlistId", "createdAt", "updatedAt")
-          VALUES (
-            gen_random_uuid(),
-            ${track.id},
-            ${track.name},
-            ${track.artists.map(artist => artist.name)},
-            ${track.album.name},
-            ${track.duration_ms},
-            ${playlist.id},
-            NOW(),
-            NOW()
+        // Create all tracks for the playlist
+        const tracksData = recommendations.tracks.map(track => ({
+          id: randomUUID(),
+          spotifyId: track.id,
+          name: track.name,
+          artists: track.artists.map(artist => artist.name),
+          albumName: track.album.name,
+          duration: track.duration_ms,
+          playlistId: playlist.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }));
+
+        // Insert tracks using raw SQL
+        await tx.$executeRaw`
+          INSERT INTO "Track" (
+            "id", "spotifyId", "name", "artists", "albumName", 
+            "duration", "playlistId", "createdAt", "updatedAt"
           )
-          RETURNING *;
+          VALUES ${Prisma.join(
+            tracksData.map(
+              track => Prisma.sql`(
+                ${track.id}, ${track.spotifyId}, ${track.name},
+                ${track.artists}, ${track.albumName}, ${track.duration},
+                ${track.playlistId}, ${track.createdAt}, ${track.updatedAt}
+              )`
+            )
+          )}
         `;
-        createdTracks.push(createdTrack[0]);
-      }
+
+        // Return combined result
+        return {
+          ...playlist,
+          tracks: tracksData,
+        };
+      });
 
       return NextResponse.json({
         playlist: {
-          id: playlist.id,
-          name: playlist.name,
-          tracks: createdTracks,
+          id: result.id,
+          name: result.name,
+          tracks: result.tracks,
           mood,
         },
       });
+
     } catch (spotifyError) {
       console.error('Spotify API Error details:', {
         error: spotifyError,
