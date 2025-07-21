@@ -41,11 +41,10 @@ export async function POST(request: Request) {
       userFields: session?.user ? Object.keys(session.user) : [],
     });
     
-    if (!session?.user?.id || !session.accessToken) {
+    if (!session?.user || !session.accessToken) {
       console.log('Authentication failed:', {
         hasSession: !!session,
         hasUser: !!session?.user,
-        hasUserId: !!session?.user?.id,
         hasAccessToken: !!session.accessToken,
       });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
