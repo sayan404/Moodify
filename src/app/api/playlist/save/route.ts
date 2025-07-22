@@ -16,9 +16,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { playlistId, tracks } = await request.json();
-    console.log("[Save-Playlist] Input:", { playlistId, tracksCount: tracks?.length });
-    if (!playlistId || !tracks) {
+    const { playlistId, dbPlaylistId, tracks } = await request.json();
+    console.log("[Save-Playlist] Input:", { playlistId, dbPlaylistId, tracksCount: tracks?.length });
+    if (!playlistId || !dbPlaylistId || !tracks) {
       console.log("[Save-Playlist] Missing playlistId or tracks");
       return NextResponse.json(
         { error: "Playlist ID and tracks are required" },
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     // Get playlist from database
     const playlist = await prisma.playlist.findUnique({
-      where: { id: playlistId },
+      where: { id: dbPlaylistId },
     });
     console.log("[Save-Playlist] Playlist from DB:", playlist);
 
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
 
     // Update playlist in database with Spotify ID
     await prisma.playlist.update({
-      where: { id: playlistId },
+      where: { id: dbPlaylistId },
       data: { spotifyPlaylistId: spotifyPlaylist.id },
     });
     console.log("[Save-Playlist] Updated playlist in DB with Spotify playlist ID");

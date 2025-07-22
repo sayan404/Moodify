@@ -10,6 +10,7 @@ interface Track {
 
 interface Playlist {
   id: string;
+  dbPlaylistId: string;
   name: string;
   tracks: Track[];
   mood: string;
@@ -34,7 +35,7 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ playlistId: playlist.id, tracks: playlist.tracks }),
+        body: JSON.stringify({ playlistId: playlist.id, dbPlaylistId: playlist.dbPlaylistId, tracks: playlist.tracks }),
       });
 
       if (!response.ok) {

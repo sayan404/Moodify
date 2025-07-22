@@ -138,6 +138,7 @@ export async function POST(request: Request) {
   console.log("[AI-Playlist] Add tracks response:", addTracksData);
 
   // --- Save playlist and tracks to DB ---
+  let dbPlaylistId = null;
   try {
     const { PrismaClient } = await import("@prisma/client");
     const prisma = new PrismaClient();
@@ -162,6 +163,7 @@ export async function POST(request: Request) {
       include: { tracks: true }
     });
     console.log("[AI-Playlist] Saved playlist to DB:", dbPlaylist.id);
+    dbPlaylistId = dbPlaylist.id;
   } catch (err) {
     console.error("[AI-Playlist] Error saving playlist to DB:", err);
   }
@@ -169,6 +171,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     playlist: {
       id: playlistData.id,
+      dbPlaylistId: dbPlaylistId,
       name: playlistData.name,
       url: playlistData.external_urls.spotify,
       tracks: foundTracks
