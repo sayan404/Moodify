@@ -96,6 +96,32 @@ export async function POST(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  try {
+    const session = await getServerSession(options) as Session;
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const { dbPlaylistId } = await request.json();
+    if (!dbPlaylistId) {
+      return NextResponse.json({ error: "Playlist ID required" }, { status: 400 });
+    }
+    const prisma = new PrismaClient();
+    // Ensure the playlist belongs to the user
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: dbPlaylistId },
+    });
+    if (!playlist || playlist.userId !== session.user.id) {
+      return NextResponse.json({ error: "Not found or not authorized" }, { status: 403 });
+    }
+    await prisma.playlist.delete({ where: { id: dbPlaylistId } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[Delete-Playlist] Error deleting playlist:", error);
+    return NextResponse.json({ error: "Failed to delete playlist" }, { status: 500 });
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const prisma = new PrismaClient();

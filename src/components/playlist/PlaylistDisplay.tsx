@@ -25,6 +25,8 @@ interface PlaylistDisplayProps {
 
 export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
   const [saved, setSaved] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState(false);
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
@@ -55,50 +57,78 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold">{playlist.name}</h2>
-          <p className="text-gray-600">Based on mood: {playlist.mood}</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleSaveToSpotify}
-            className="bg-[#1DB954] text-white px-6 py-2 rounded-full hover:bg-[#1ed760] transition-colors"
-          >
-            {saved ? "Saved" : "Save to Spotify"}
-          </button>
-          {playlist.url && saved && (
-            <a
-              href={playlist.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors flex items-center"
-            >
-              Open in Spotify
-            </a>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        {playlist.tracks.map((track, index) => (
-          <div
-            key={track.id}
-            className="flex items-center p-3 hover:bg-gray-50 rounded-lg"
-          >
-            <span className="w-8 text-gray-400">{index + 1}</span>
-            <div className="flex-1">
-              <p className="font-medium">{track.name}</p>
-              <p className="text-sm text-gray-600">
-                {track.artists.join(", ")} • {track.albumName}
-              </p>
-            </div>
-            <span className="text-gray-500 text-sm">
-              {formatDuration(track.duration)}
-            </span>
+      {deleted ? (
+        <div className="text-red-600 font-bold text-center py-8">Playlist deleted.</div>
+      ) : (
+      <>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">{playlist.name}</h2>
+            <p className="text-gray-600">Based on mood: {playlist.mood}</p>
           </div>
-        ))}
-      </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveToSpotify}
+              className="bg-[#1DB954] text-white px-6 py-2 rounded-full hover:bg-[#1ed760] transition-colors"
+            >
+              {saved ? "Saved" : "Save to Spotify"}
+            </button>
+            {playlist.url && saved && (
+              <a
+                href={playlist.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors flex items-center"
+              >
+                Open in Spotify
+              </a>
+            )}
+            <button
+              onClick={async () => {
+                if (!window.confirm("Are you sure you want to delete this playlist?")) return;
+                setDeleting(true);
+                try {
+                  const res = await fetch("/api/playlist/save", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ dbPlaylistId: playlist.dbPlaylistId }),
+                  });
+                  if (res.ok) {
+                    setDeleted(true);
+                  }
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+              className="bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-colors flex items-center disabled:opacity-60"
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {playlist.tracks.map((track, index) => (
+            <div
+              key={track.id}
+              className="flex items-center p-3 hover:bg-gray-50 rounded-lg"
+            >
+              <span className="w-8 text-gray-400">{index + 1}</span>
+              <div className="flex-1">
+                <p className="font-medium">{track.name}</p>
+                <p className="text-sm text-gray-600">
+                  {track.artists.join(", ")} • {track.albumName}
+                </p>
+              </div>
+              <span className="text-gray-500 text-sm">
+                {formatDuration(track.duration)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </>
+      )}
     </div>
   );
 } 
