@@ -28,6 +28,7 @@ model Playlist {
   name             String
   spotifyPlaylistId String  @unique
   sentiment        String?
+  description      String?
   tracks           Track[]
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           String

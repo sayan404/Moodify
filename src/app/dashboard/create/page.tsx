@@ -7,7 +7,7 @@ export default function CreatePlaylistPage() {
   const [generatedPlaylist, setGeneratedPlaylist] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleMoodSubmit = async (moodText: string) => {
+  const handleMoodSubmit = async (data: { moodText: string; description: string; mood: string; numSongs: number }) => {
     setIsLoading(true);
     try {
       const response = await fetch("/api/playlist/generate", {
@@ -15,15 +15,15 @@ export default function CreatePlaylistPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ moodText }),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         throw new Error("Failed to generate playlist");
       }
 
-      const data = await response.json();
-      setGeneratedPlaylist(data.playlist);
+      const resData = await response.json();
+      setGeneratedPlaylist(resData.playlist);
     } catch (error) {
       console.error("Error generating playlist:", error);
     } finally {
