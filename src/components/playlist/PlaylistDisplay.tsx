@@ -25,8 +25,8 @@ interface PlaylistDisplayProps {
 
 export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
   const [saved, setSaved] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleted, setDeleted] = useState(false);
+  const [trackDeleting, setTrackDeleting] = useState<string | null>(null);
+  const [tracks, setTracks] = useState(playlist.tracks);
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
@@ -57,9 +57,6 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
 
   return (
     <div>
-      {deleted ? (
-        <div className="text-red-600 font-bold text-center py-8">Playlist deleted.</div>
-      ) : (
       <>
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -83,33 +80,11 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
                 Open in Spotify
               </a>
             )}
-            <button
-              onClick={async () => {
-                if (!window.confirm("Are you sure you want to delete this playlist?")) return;
-                setDeleting(true);
-                try {
-                  const res = await fetch("/api/playlist/save", {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ dbPlaylistId: playlist.dbPlaylistId }),
-                  });
-                  if (res.ok) {
-                    setDeleted(true);
-                  }
-                } finally {
-                  setDeleting(false);
-                }
-              }}
-              className="bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-colors flex items-center disabled:opacity-60"
-              disabled={deleting}
-            >
-              {deleting ? "Deleting..." : "Delete"}
-            </button>
           </div>
         </div>
 
         <div className="space-y-2">
-          {playlist.tracks.map((track, index) => (
+          {tracks.map((track, index) => (
             <div
               key={track.id}
               className="flex items-center p-3 hover:bg-gray-50 rounded-lg"
@@ -124,11 +99,32 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
               <span className="text-gray-500 text-sm">
                 {formatDuration(track.duration)}
               </span>
+              <button
+                onClick={async () => {
+                  if (!window.confirm(`Delete song "${track.name}" from playlist?`)) return;
+                  setTrackDeleting(track.id);
+                  try {
+                    const res = await fetch("/api/playlist/save/track", {
+                      method: "DELETE",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ dbPlaylistId: playlist.dbPlaylistId, trackId: track.id }),
+                    });
+                    if (res.ok) {
+                      setTracks((prev) => prev.filter((t) => t.id !== track.id));
+                    }
+                  } finally {
+                    setTrackDeleting(null);
+                  }
+                }}
+                className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors disabled:opacity-60"
+                disabled={trackDeleting === track.id}
+              >
+                {trackDeleting === track.id ? "Deleting..." : "Delete"}
+              </button>
             </div>
           ))}
         </div>
       </>
-      )}
     </div>
   );
 } 

@@ -13,8 +13,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="fixed top-0 left-0 h-full w-64 bg-white shadow-2xl z-40">
           <div className="flex flex-col h-full p-6 gap-4">
             <Link href="/dashboard/create" className="text-left px-4 py-2 rounded hover:bg-gray-100 font-semibold text-lg">Create Playlist</Link>
-            <Link href="/dashboard/all" className="text-left px-4 py-2 rounded hover:bg-gray-100 font-semibold text-lg">Checkout All Playlists</Link>
-            <Link href="/dashboard/merge" className="text-left px-4 py-2 rounded hover:bg-gray-100 font-semibold text-lg">Merge Playlists</Link>
+            <Link href="/dashboard/all" className="text-left px-4 py-2 rounded hover:bg-gray-100 font-semibold text-lg">Your Playlists</Link>
+            {/* <Link href="/dashboard/merge" className="text-left px-4 py-2 rounded hover:bg-gray-100 font-semibold text-lg">Merge Playlists</Link> */}
           </div>
         </div>
       </div>
