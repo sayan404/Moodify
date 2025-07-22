@@ -99,6 +99,13 @@ export const options: NextAuthOptions = {
           session.error = token.error as string;
         }
       }
+      // Add the Spotify user ID to the session
+      console.log("session from session callback", session);
+      console.log("token from session callback", token);
+
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+      }
       return session;
     },
   },
