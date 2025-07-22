@@ -71,7 +71,7 @@ export async function POST(request: Request) {
   }
 
   // 2. Search Spotify for each suggested song
-  const foundTracks: { id: string, uri: string, name: string, artist: string }[] = [];
+  const foundTracks: { id: string, uri: string, name: string, artists: string[], albumName: string, duration: number }[] = [];
   for (const song of aiResult.suggested_songs || []) {
     const q = encodeURIComponent(`${song.title} ${song.artist}`);
     console.log("[AI-Playlist] Searching Spotify for:", song.title, "by", song.artist);
@@ -87,7 +87,9 @@ export async function POST(request: Request) {
         id: track.id,
         uri: track.uri,
         name: track.name,
-        artist: track.artists.map((a: any) => a.name).join(", ")
+        artists: track.artists.map((a: any) => a.name),
+        albumName: track.album?.name ?? "",
+        duration: track.duration_ms ?? 0,
       });
       console.log("[AI-Playlist] Found track:", track.name, "by", track.artists.map((a: any) => a.name).join(", "));
     } else {
@@ -147,25 +149,54 @@ export async function POST(request: Request) {
 }
 
 
-
-// 2025-07-21T21:11:21.458Z [info] [AI-Playlist] Start request
-// 2025-07-21T21:11:21.475Z [info] [AI-Playlist] Session: {
+// 2025-07-22T16:58:39.070Z [info] [AI-Playlist] Start request
+// 2025-07-22T16:58:39.072Z [info] session from session callback {
 //   user: {
 //     name: 'Sayan',
 //     email: 'sayanmajumder0002@gmail.com',
 //     image: undefined
 //   },
+//   expires: '2025-08-21T16:58:39.071Z',
+//   accessToken: 'BQBhK2CRnRKmKHrOF2Jvk-NxTPPyW7BNVHQnWYbFxiOFthLXwkYoxYjVCX_WMXLu1exF_d7Cnqx07QJIH3lnTOFcJ2i2hg8PHD98oHGBJ9JWJW4wjMOYxO62MwuWqbbguqf_daBrqN3MmqL0cjTc3bb7OmAKVHsdbiyOFFljmxLTIhXIiZJfSYih_a32hEnIEUNe3MoSxYyNyZtxGarFgJD_TS44wbByrt2KymiroTchXbonDb0j8_UXp1lYmZwDQz_OFAzeNXo4TNiyxQZMUEY1IZ9A0esRexvc5PD4GI4vkFv3r3d2vfOm'
+// }
+// 2025-07-22T16:58:39.073Z [info] token from session callback {
+//   name: 'Sayan',
+//   email: 'sayanmajumder0002@gmail.com',
+//   sub: '31qmncm3sxkyz7gnhinosohyuzki',
+//   accessToken: 'BQBhK2CRnRKmKHrOF2Jvk-NxTPPyW7BNVHQnWYbFxiOFthLXwkYoxYjVCX_WMXLu1exF_d7Cnqx07QJIH3lnTOFcJ2i2hg8PHD98oHGBJ9JWJW4wjMOYxO62MwuWqbbguqf_daBrqN3MmqL0cjTc3bb7OmAKVHsdbiyOFFljmxLTIhXIiZJfSYih_a32hEnIEUNe3MoSxYyNyZtxGarFgJD_TS44wbByrt2KymiroTchXbonDb0j8_UXp1lYmZwDQz_OFAzeNXo4TNiyxQZMUEY1IZ9A0esRexvc5PD4GI4vkFv3r3d2vfOm',
+//   refreshToken: 'AQBgWS-0y5iFjFegh8Dd6HPnLdHAvASMk_UBzR7qSUHW3KC6NDMZC2R0oG8ivl4Xes27uWqeEwK-KH3pyJc7TQsc7XDAvrI7s5PWUq32aYy42zIHe2fGfvaeJpRZPH5tXbs',
+//   accessTokenExpires: 1753206563110,
+//   iat: 1753203497,
+//   exp: 1755795497,
+//   jti: '5dbb3c0a-8563-4b3e-99d4-c7d0e865b56a'
+// }
+// 2025-07-22T16:58:39.089Z [info] session from playlist route {
+//   user: {
+//     name: 'Sayan',
+//     email: 'sayanmajumder0002@gmail.com',
+//     image: undefined,
+//     id: '31qmncm3sxkyz7gnhinosohyuzki'
+//   },
+//   accessToken: 'BQBhK2CRnRKmKHrOF2Jvk-NxTPPyW7BNVHQnWYbFxiOFthLXwkYoxYjVCX_WMXLu1exF_d7Cnqx07QJIH3lnTOFcJ2i2hg8PHD98oHGBJ9JWJW4wjMOYxO62MwuWqbbguqf_daBrqN3MmqL0cjTc3bb7OmAKVHsdbiyOFFljmxLTIhXIiZJfSYih_a32hEnIEUNe3MoSxYyNyZtxGarFgJD_TS44wbByrt2KymiroTchXbonDb0j8_UXp1lYmZwDQz_OFAzeNXo4TNiyxQZMUEY1IZ9A0esRexvc5PD4GI4vkFv3r3d2vfOm'
+// }
+// 2025-07-22T16:58:39.089Z [info] [AI-Playlist] Session from playlist route: {
+//   user: {
+//     name: 'Sayan',
+//     email: 'sayanmajumder0002@gmail.com',
+//     image: undefined,
+//     id: '31qmncm3sxkyz7gnhinosohyuzki'
+//   },
 //   accessToken: 'Present'
 // }
-// 2025-07-21T21:11:21.478Z [info] [AI-Playlist] User input: soothing song
-// 2025-07-21T21:11:21.478Z [info] [AI-Playlist] Gemini prompt: 
+// 2025-07-22T16:58:39.089Z [info] [AI-Playlist] User input: create a soothing music playlst for sleep
+// 2025-07-22T16:58:39.089Z [info] [AI-Playlist] Gemini prompt: 
 //     Analyze the following user input and extract:
 //     - mood (e.g. happy, sad, energetic, nostalgic, etc.)
 //     - genre (e.g. pop, bollywood, rock, etc.)
 //     - era/decade (e.g. 90s, 2000s, etc.)
 //     - theme (e.g. love, party, workout, etc.)
 //     - up to 5 song suggestions (title and artist, preferably with Spotify popularity)
-//     User input: "soothing song"
+//     User input: "create a soothing music playlst for sleep"
 //     Respond as JSON:
 //     {
 //       "mood": "...",
@@ -177,69 +208,8 @@ export async function POST(request: Request) {
 //         ...
 //       ]
 //     }
-// 2025-07-21T21:11:22.795Z [info] [AI-Playlist] Gemini API status: 200
-// 2025-07-21T21:11:22.799Z [info] [AI-Playlist] Gemini API response: {
-//   candidates: [
-//     {
-//       content: [Object],
-//       finishReason: 'STOP',
-//       avgLogprobs: -0.04842419094509549
-//     }
-//   ],
-//   usageMetadata: {
-//     promptTokenCount: 185,
-//     candidatesTokenCount: 144,
-//     totalTokenCount: 329,
-//     promptTokensDetails: [ [Object] ],
-//     candidatesTokensDetails: [ [Object] ]
-//   },
-//   modelVersion: 'gemini-2.0-flash',
-//   responseId: '-ax-aJjaLNWU7dcPv9bKkQs'
-// }
-// 2025-07-21T21:11:22.799Z [info] [AI-Playlist] Gemini AI result: {
-//   mood: 'calm',
-//   genre: 'acoustic',
-//   era: 'any',
-//   theme: 'relaxation',
-//   suggested_songs: [
-//     { title: 'Weightless', artist: 'Marconi Union' },
-//     { title: 'Watermark', artist: 'Enya' },
-//     { title: 'Nuvole Bianche', artist: 'Ludovico Einaudi' },
-//     { title: 'Clair de Lune, L. 32', artist: 'Claude Debussy' },
-//     { title: 'Ave Maria', artist: 'Franz Schubert' }
-//   ]
-// }
-// 2025-07-21T21:11:22.799Z [info] [AI-Playlist] Searching Spotify for: Weightless by Marconi Union
-// 2025-07-21T21:11:23.173Z [info] [AI-Playlist] Spotify search status: 200
-// 2025-07-21T21:11:23.173Z [info] [AI-Playlist] Spotify search data: {
-//   tracks: {
-//     href: 'https://api.spotify.com/v1/search?offset=0&limit=1&query=Weightless%20Marconi%20Union&type=track&locale=*',
-//     limit: 1,
-//     next: 'https://api.spotify.com/v1/search?offset=1&limit=1&query=Weightless%20Marconi%20Union&type=track&locale=*',
-//     offset: 0,
-//     previous: null,
-//     total: 1000,
-//     items: [ [Object] ]
-//   }
-// }
-// 2025-07-21T21:11:23.173Z [info] [AI-Playlist] Found track: Weightless by Marconi Union
-// 2025-07-21T21:11:23.173Z [info] [AI-Playlist] Searching Spotify for: Watermark by Enya
-// 2025-07-21T21:11:23.532Z [info] [AI-Playlist] Spotify search status: 200
-// 2025-07-21T21:11:23.535Z [info] [AI-Playlist] Spotify search data: {
-//   tracks: {
-//     href: 'https://api.spotify.com/v1/search?offset=0&limit=1&query=Watermark%20Enya&type=track&locale=*',
-//     limit: 1,
-//     next: 'https://api.spotify.com/v1/search?offset=1&limit=1&query=Watermark%20Enya&type=track&locale=*',
-//     offset: 0,
-//     previous: null,
-//     total: 1000,
-//     items: [ [Object] ]
-//   }
-// }
-// 2025-07-21T21:11:23.535Z [info] [AI-Playlist] Found track: Watermark - 2009 Remaster by Enya
-// 2025-07-21T21:11:23.535Z [info] [AI-Playlist] Searching Spotify for: Nuvole Bianche by Ludovico Einaudi
-// 2025-07-21T21:11:23.873Z [info] [AI-Playlist] Spotify search status: 200
-// 2025-07-21T21:11:23.875Z [info] [AI-Playlist] Spotify search data: {
+// 2025-07-22T16:58:41.174Z [info] [AI-Playlist] Spotify search status: 200
+// 2025-07-22T16:58:41.176Z [info] [AI-Playlist] Spotify search data: {
 //   tracks: {
 //     href: 'https://api.spotify.com/v1/search?offset=0&limit=1&query=Nuvole%20Bianche%20Ludovico%20Einaudi&type=track&locale=*',
 //     limit: 1,
@@ -250,10 +220,85 @@ export async function POST(request: Request) {
 //     items: [ [Object] ]
 //   }
 // }
-// 2025-07-21T21:11:23.875Z [info] [AI-Playlist] Found track: Nuvole Bianche by Ludovico Einaudi
-// 2025-07-21T21:11:23.875Z [info] [AI-Playlist] Searching Spotify for: Clair de Lune, L. 32 by Claude Debussy
-// 2025-07-21T21:11:24.208Z [info] [AI-Playlist] Spotify search status: 200
-// 2025-07-21T21:11:24.213Z [info] [AI-Playlist] Spotify search data: {
+// 2025-07-22T16:58:41.176Z [info] [AI-Playlist] Found track: Nuvole Bianche by Ludovico Einaudi
+// 2025-07-22T16:58:41.176Z [info] [AI-Playlist] Searching Spotify for: Watermark by Enya
+// 2025-07-22T16:58:41.547Z [info] [AI-Playlist] Spotify search status: 200
+// 2025-07-22T16:58:41.550Z [info] [AI-Playlist] Spotify search data: {
+//   tracks: {
+//     href: 'https://api.spotify.com/v1/search?offset=0&limit=1&query=Watermark%20Enya&type=track&locale=*',
+//     limit: 1,
+//     next: 'https://api.spotify.com/v1/search?offset=1&limit=1&query=Watermark%20Enya&type=track&locale=*',
+//     offset: 0,
+//     previous: null,
+//     total: 1000,
+//     items: [ [Object] ]
+//   }
+// }
+// 2025-07-22T16:58:41.550Z [info] [AI-Playlist] Found track: Watermark - 2009 Remaster by Enya
+// 2025-07-22T16:58:41.550Z [info] [AI-Playlist] Searching Spotify for: An Ending (Ascent) by Brian Eno
+// 2025-07-22T16:58:41.925Z [info] [AI-Playlist] Spotify search status: 200
+// 2025-07-22T16:58:41.926Z [info] [AI-Playlist] Spotify search data: {
+//   tracks: {
+//     href: 'https://api.spotify.com/v1/search?offset=0&limit=1&query=An%20Ending%20%28Ascent%29%20Brian%20Eno&type=track&locale=*',
+//     limit: 1,
+//     next: 'https://api.spotify.com/v1/search?offset=1&limit=1&query=An%20Ending%20%28Ascent%29%20Brian%20Eno&type=track&locale=*',
+//     offset: 0,
+//     previous: null,
+//     total: 1000,
+//     items: [ [Object] ]
+//   }
+// }
+// 2025-07-22T16:58:41.927Z [info] [AI-Playlist] Found track: An Ending (Ascent) - Remastered 2005 by Brian Eno
+// 2025-07-22T16:58:41.927Z [info] [AI-Playlist] Searching Spotify for: Clair de Lune, L. 32 by Claude Debussy
+// 2025-07-22T16:58:40.439Z [info] [AI-Playlist] Gemini API status: 200
+// 2025-07-22T16:58:40.442Z [info] [AI-Playlist] Gemini API response: {
+//   candidates: [
+//     {
+//       content: [Object],
+//       finishReason: 'STOP',
+//       avgLogprobs: -0.04094664904536033
+//     }
+//   ],
+//   usageMetadata: {
+//     promptTokenCount: 190,
+//     candidatesTokenCount: 147,
+//     totalTokenCount: 337,
+//     promptTokensDetails: [ [Object] ],
+//     candidatesTokensDetails: [ [Object] ]
+//   },
+//   modelVersion: 'gemini-2.0-flash',
+//   responseId: 'P8N_aL3KDf-ygLUPh6XfgAE'
+// }
+// 2025-07-22T16:58:40.443Z [info] [AI-Playlist] Gemini AI result: {
+//   mood: 'soothing',
+//   genre: 'ambient',
+//   era: 'any',
+//   theme: 'sleep',
+//   suggested_songs: [
+//     { title: 'Weightless', artist: 'Marconi Union' },
+//     { title: 'Nuvole Bianche', artist: 'Ludovico Einaudi' },
+//     { title: 'Watermark', artist: 'Enya' },
+//     { title: 'An Ending (Ascent)', artist: 'Brian Eno' },
+//     { title: 'Clair de Lune, L. 32', artist: 'Claude Debussy' }
+//   ]
+// }
+// 2025-07-22T16:58:40.443Z [info] [AI-Playlist] Searching Spotify for: Weightless by Marconi Union
+// 2025-07-22T16:58:40.826Z [info] [AI-Playlist] Spotify search status: 200
+// 2025-07-22T16:58:40.828Z [info] [AI-Playlist] Spotify search data: {
+//   tracks: {
+//     href: 'https://api.spotify.com/v1/search?offset=0&limit=1&query=Weightless%20Marconi%20Union&type=track&locale=*',
+//     limit: 1,
+//     next: 'https://api.spotify.com/v1/search?offset=1&limit=1&query=Weightless%20Marconi%20Union&type=track&locale=*',
+//     offset: 0,
+//     previous: null,
+//     total: 998,
+//     items: [ [Object] ]
+//   }
+// }
+// 2025-07-22T16:58:40.829Z [info] [AI-Playlist] Found track: Weightless by Marconi Union
+// 2025-07-22T16:58:40.829Z [info] [AI-Playlist] Searching Spotify for: Nuvole Bianche by Ludovico Einaudi
+// 2025-07-22T16:58:42.335Z [info] [AI-Playlist] Spotify search status: 200
+// 2025-07-22T16:58:42.338Z [info] [AI-Playlist] Spotify search data: {
 //   tracks: {
 //     href: 'https://api.spotify.com/v1/search?offset=0&limit=1&query=Clair%20de%20Lune%2C%20L.%2032%20Claude%20Debussy&type=track&locale=*',
 //     limit: 1,
@@ -264,46 +309,51 @@ export async function POST(request: Request) {
 //     items: [ [Object] ]
 //   }
 // }
-// 2025-07-21T21:11:24.213Z [info] [AI-Playlist] Found track: Clair de Lune, L. 32 by Claude Debussy, Martin Jones
-// 2025-07-21T21:11:24.213Z [info] [AI-Playlist] Searching Spotify for: Ave Maria by Franz Schubert
-// 2025-07-21T21:11:24.551Z [info] [AI-Playlist] Spotify search status: 200
-// 2025-07-21T21:11:24.555Z [info] [AI-Playlist] Spotify search data: {
+// 2025-07-22T16:58:42.338Z [info] [AI-Playlist] Found track: Clair de Lune, L. 32 by Claude Debussy, Martin Jones
+// 2025-07-22T16:58:42.338Z [info] [AI-Playlist] Creating playlist for user: 31qmncm3sxkyz7gnhinosohyuzki
+// 2025-07-22T16:58:42.467Z [info] [AI-Playlist] Playlist creation status: 201
+// 2025-07-22T16:58:42.469Z [info] [AI-Playlist] Playlist data: {
+//   collaborative: false,
+//   description: 'Generated by Gemini AI: create a soothing music playlst for sleep',
+//   external_urls: {
+//     spotify: 'https://open.spotify.com/playlist/6FQUq5NDpF5eHo2zsLmbUR'
+//   },
+//   followers: { href: null, total: 0 },
+//   href: 'https://api.spotify.com/v1/playlists/6FQUq5NDpF5eHo2zsLmbUR',
+//   id: '6FQUq5NDpF5eHo2zsLmbUR',
+//   images: [],
+//   primary_color: null,
+//   name: 'AI Playlist: soothing',
+//   type: 'playlist',
+//   uri: 'spotify:playlist:6FQUq5NDpF5eHo2zsLmbUR',
+//   owner: {
+//     href: 'https://api.spotify.com/v1/users/31qmncm3sxkyz7gnhinosohyuzki',
+//     id: '31qmncm3sxkyz7gnhinosohyuzki',
+//     type: 'user',
+//     uri: 'spotify:user:31qmncm3sxkyz7gnhinosohyuzki',
+//     display_name: null,
+//     external_urls: {
+//       spotify: 'https://open.spotify.com/user/31qmncm3sxkyz7gnhinosohyuzki'
+//     }
+//   },
+//   public: false,
+//   snapshot_id: 'AAAAFKKHYNIkst7fOK3X9A2l4DOUjoCR',
 //   tracks: {
-//     href: 'https://api.spotify.com/v1/search?offset=0&limit=1&query=Ave%20Maria%20Franz%20Schubert&type=track&locale=*',
-//     limit: 1,
-//     next: 'https://api.spotify.com/v1/search?offset=1&limit=1&query=Ave%20Maria%20Franz%20Schubert&type=track&locale=*',
+//     limit: 100,
+//     next: null,
 //     offset: 0,
 //     previous: null,
-//     total: 1000,
-//     items: [ [Object] ]
+//     href: 'https://api.spotify.com/v1/playlists/6FQUq5NDpF5eHo2zsLmbUR/tracks',
+//     total: 0,
+//     items: []
 //   }
 // }
-// 2025-07-21T21:11:24.555Z [info] [AI-Playlist] Found track: Ave Maria, D. 839 by Franz Schubert, Renée Fleming, Royal Philharmonic Orchestra, Andreas Delfs
-// 2025-07-21T21:11:24.555Z [info] [AI-Playlist] Creating playlist for user: undefined
-// 2025-07-21T21:11:24.584Z [info] [AI-Playlist] Playlist creation status: 403
-// 2025-07-21T21:11:24.587Z [info] [AI-Playlist] Playlist data: {
-//   error: {
-//     status: 403,
-//     message: 'You cannot create a playlist for another user'
-//   }
-// }
-// 2025-07-21T21:11:24.587Z [info] [AI-Playlist] Adding tracks to playlist: [
+// 2025-07-22T16:58:42.469Z [info] [AI-Playlist] Adding tracks to playlist: [
 //   'spotify:track:6kkwzB6hXLIONkEk9JciA6',
-//   'spotify:track:2XkWsVewOXOhSwWCQx2tR8',
 //   'spotify:track:3weNRklVDqb4Rr5MhKBR3D',
-//   'spotify:track:5u5aVJKjSMJr4zesMPz7bL',
-//   'spotify:track:4GnVpbnWjHFrpXjAcPHvqM'
+//   'spotify:track:2XkWsVewOXOhSwWCQx2tR8',
+//   'spotify:track:1vgSaC0BPlL6LEm4Xsx59J',
+//   'spotify:track:5u5aVJKjSMJr4zesMPz7bL'
 // ]
-// 2025-07-21T21:11:24.614Z [info] [AI-Playlist] Add tracks status: 400
-// 2025-07-21T21:11:24.618Z [info] [AI-Playlist] Add tracks response: { error: { status: 400, message: 'Invalid base62 id' } }
-// 2025-07-21T21:11:24.619Z [error] ⨯ TypeError: Cannot read properties of undefined (reading 'spotify')
-//     at u (/var/task/.next/server/app/api/playlist/generate/route.js:20:2609)
-//     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-//     at async /var/task/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:42484
-//     at async eI.execute (/var/task/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:32486)
-//     at async eI.handle (/var/task/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:43737)
-//     at async Y (/var/task/node_modules/next/dist/compiled/next-server/server.runtime.prod.js:16:24556)
-//     at async Q.responseCache.get.routeKind (/var/task/node_modules/next/dist/compiled/next-server/server.runtime.prod.js:17:1025)
-//     at async r3.renderToResponseWithComponentsImpl (/var/task/node_modules/next/dist/compiled/next-server/server.runtime.prod.js:17:507)
-//     at async r3.renderPageComponent (/var/task/node_modules/next/dist/compiled/next-server/server.runtime.prod.js:17:4780)
-//     at async r3.renderToResponseImpl (/var/task/node_modules/next/dist/compiled/next-server/server.runtime.prod.js:17:5363)
+// 2025-07-22T16:58:42.598Z [info] [AI-Playlist] Add tracks status: 201
+// 2025-07-22T16:58:42.600Z [info] [AI-Playlist] Add tracks response: { snapshot_id: 'AAAAAgwsxreqRUCGcnjYKyPo07zNRNUE' }
