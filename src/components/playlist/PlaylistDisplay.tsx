@@ -25,6 +25,8 @@ interface PlaylistDisplayProps {
 
 export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [trackDeleting, setTrackDeleting] = useState<string | null>(null);
   const [tracks, setTracks] = useState(playlist.tracks);
   const formatDuration = (ms: number) => {
@@ -35,6 +37,7 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
   console.log("playlist from playlist display", playlist);
 
   const handleSaveToSpotify = async () => {
+    setSaving(true);
     try {
       const response = await fetch("/api/playlist/save", {
         method: "POST",
@@ -48,15 +51,24 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
         throw new Error("Failed to save playlist");
       }
       setSaved(true);
-      // Handle success (e.g., show a notification)
+      setToast({ type: 'success', message: 'Playlist saved to Spotify!' });
     } catch (error) {
       console.error("Error saving playlist:", error);
-      // Handle error (e.g., show error message)
+      setToast({ type: 'error', message: 'Failed to save playlist.' });
+    } finally {
+      setSaving(false);
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
   return (
     <div>
+      {/* Toast notification */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-50 px-6 py-3 rounded shadow-lg text-white font-semibold transition-all ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+          {toast.message}
+        </div>
+      )}
       <>
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -66,9 +78,16 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
           <div className="flex gap-2">
             <button
               onClick={handleSaveToSpotify}
-              className="bg-[#1DB954] text-white px-6 py-2 rounded-full hover:bg-[#1ed760] transition-colors"
+              className="bg-[#1DB954] text-white px-6 py-2 rounded-full hover:bg-[#1ed760] transition-colors flex items-center gap-2"
+              disabled={saving}
             >
-              {saved ? "Saved" : "Save to Spotify"}
+              {saving && (
+                <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+              )}
+              {saved ? "Saved" : saving ? "Saving..." : "Save"}
             </button>
             {playlist.url && saved && (
               <a

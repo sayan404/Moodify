@@ -3,19 +3,25 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request });
-  const isAuthenticated = !!token;
+  // In development, bypass authentication
+  if (process.env.NODE_ENV === 'development') {
+    // If trying to access login page in dev mode, redirect to dashboard
+    if (request.nextUrl.pathname === "/login") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.next();
+  }
 
-  // Public paths that don't require authentication
+  const token = await getToken({ req: request });
   const isPublicPath = request.nextUrl.pathname === "/login";
 
   // If the user is not authenticated and trying to access a protected route
-  if (!isAuthenticated && !isPublicPath) {
+  if (!token && !isPublicPath) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // If the user is authenticated and trying to access login page
-  if (isAuthenticated && isPublicPath) {
+  if (token && isPublicPath) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
