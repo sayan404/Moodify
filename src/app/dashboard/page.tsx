@@ -35,6 +35,7 @@ export default function DashboardPage() {
       }
 
       const data = await response.json();
+      console.log("data from dashboard page", data);
       setGeneratedPlaylist(data.playlist);
     } catch (error) {
       console.error("Error generating playlist:", error);
