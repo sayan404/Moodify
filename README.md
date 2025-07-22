@@ -1,98 +1,141 @@
-# Sentiment-Aware Smart Playlist Generator 🎵
+# Moodify - AI-Powered Playlist Generator
 
-A Next.js application that generates Spotify playlists based on your mood using sentiment analysis.
+Moodify is a modern web application that creates personalized Spotify playlists based on your mood using AI. Simply describe how you're feeling, and let our AI create the perfect playlist for you.
 
-## Features
+![Moodify Dark Mode](screenshot-dark.png)
 
-- 🎭 Mood-based playlist generation
-- 🔍 Sentiment analysis of user input
-- 🎵 Spotify integration
-- 🎨 Beautiful, responsive UI
-- 🔐 Secure authentication with Spotify
-- 📊 PostgreSQL database for storing user preferences and playlists
+## ✨ Features
 
-## Prerequisites
+- **🎯 Mood-Based Generation**: Create playlists based on your current mood or desired vibe
+- **🤖 AI-Powered**: Uses Google's Gemini AI to understand your mood and suggest appropriate songs
+- **🎨 Dark/Light Mode**: Beautiful, responsive UI with automatic dark mode support
+- **🔄 Spotify Integration**: Seamlessly saves playlists to your Spotify account
+- **📱 Responsive Design**: Works perfectly on desktop and mobile devices
+- **🎵 Preview Songs**: Listen to song previews before saving the playlist
+- **🎨 Customization**: Control playlist length and add custom descriptions
 
-- Node.js 18+ and npm
-- PostgreSQL database
-- Spotify Developer account
+## 🚀 Tech Stack
 
-## Setup
+- **Frontend**: Next.js 13+ (App Router), React, TypeScript
+- **Styling**: Tailwind CSS
+- **Authentication**: NextAuth.js with Spotify OAuth
+- **Database**: PostgreSQL with Prisma ORM
+- **AI**: Google Gemini API
+- **API**: Spotify Web API
+- **Hosting**: Vercel
 
-1. Clone the repository:
+## 📦 Installation
+
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/song-suggester.git
-   cd song-suggester
+   git clone https://github.com/yourusername/moodify.git
+   cd moodify
    ```
 
-2. Install dependencies:
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. Create a `.env` file in the root directory with the following variables:
+3. **Set up environment variables**
+   Create a `.env` file in the root directory with:
    ```env
+   # Spotify API
+   SPOTIFY_CLIENT_ID=your_spotify_client_id
+   SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+
+   # NextAuth
+   NEXTAUTH_SECRET=your_nextauth_secret
+   NEXTAUTH_URL=http://localhost:3000
+
    # Database
-   DATABASE_URL="postgresql://user:password@localhost:5432/song_suggester"
+   DATABASE_URL=your_postgresql_url
 
-   # Next Auth
-   NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="your-nextauth-secret"
-
-   # Spotify
-   SPOTIFY_CLIENT_ID="your-spotify-client-id"
-   SPOTIFY_CLIENT_SECRET="your-spotify-client-secret"
-   SPOTIFY_REDIRECT_URI="http://localhost:3000/api/auth/callback/spotify"
+   # Gemini AI
+   GEMINI_API_KEY=your_gemini_api_key
    ```
 
-4. Set up the database:
+4. **Set up the database**
    ```bash
-   npx prisma db push
+   npx prisma migrate dev
    ```
 
-5. Start the development server:
+5. **Run the development server**
    ```bash
    npm run dev
    ```
 
-## Spotify Setup
+## 💻 Usage
 
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Create a new application
-3. Add `http://localhost:3000/api/auth/callback/spotify` to the Redirect URIs
-4. Copy the Client ID and Client Secret to your `.env` file
+1. **Login with Spotify**
+   - Click "Login with Spotify" to authenticate
+   - Grant necessary permissions for playlist creation
 
-## Project Structure
+2. **Create a Playlist**
+   - Describe your current mood or desired vibe
+   - Add optional details like description and number of songs
+   - Click "Create Playlist" to generate
+
+3. **Customize & Save**
+   - Preview the generated songs
+   - Remove any songs you don't like
+   - Save the playlist to your Spotify account
+
+4. **Manage Playlists**
+   - View all your generated playlists
+   - Open them directly in Spotify
+   - Delete individual songs or entire playlists
+
+## 🔑 Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `SPOTIFY_CLIENT_ID` | Your Spotify application client ID |
+| `SPOTIFY_CLIENT_SECRET` | Your Spotify application client secret |
+| `NEXTAUTH_SECRET` | Random string for session encryption |
+| `NEXTAUTH_URL` | Your application's base URL |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `GEMINI_API_KEY` | Google Gemini API key |
+
+## 📁 Project Structure
 
 ```
-src/
-  ├── app/              # Next.js app router
-  │   ├── api/         # API routes
-  │   ├── (auth)/      # Authentication pages
-  │   └── dashboard/   # Main application pages
-  ├── components/      # React components
-  ├── lib/            # Utility functions
-  └── types/          # TypeScript types
+moodify/
+├── src/
+│   ├── app/                 # Next.js app router pages
+│   ├── components/          # React components
+│   ├── prisma/             # Database schema and migrations
+│   └── types/              # TypeScript type definitions
+├── public/                 # Static assets
+└── package.json           # Project dependencies
 ```
 
-## Technologies Used
+## 🛠️ Development
 
-- Next.js 14
-- TypeScript
-- Prisma (PostgreSQL)
-- NextAuth.js
-- Spotify Web API
-- Tailwind CSS
-- Sentiment Analysis
+- **Code Style**: Uses ESLint and Prettier
+- **Type Safety**: Full TypeScript support
+- **Database**: Prisma for type-safe database access
+- **API Routes**: Next.js API routes with proper error handling
+- **State Management**: React hooks for local state
+- **Authentication**: NextAuth.js with JWT strategy
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Spotify Web API](https://developer.spotify.com/documentation/web-api/)
+- [Google Gemini AI](https://deepmind.google/technologies/gemini/)
+- [Next.js](https://nextjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [NextAuth.js](https://next-auth.js.org/)
+- [Prisma](https://www.prisma.io/)

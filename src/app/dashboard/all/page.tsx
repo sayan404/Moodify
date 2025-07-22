@@ -125,7 +125,7 @@ export default function AllPlaylistsPage() {
                 <div className="text-gray-400 dark:text-gray-500 text-xs">Created: {new Date(pl.createdAt).toLocaleString()}</div>
               </div>
               <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden ${expanded === pl.id && pl.tracks && pl.tracks.length > 0 ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
+                className={`transition-all duration-300 ease-in-out overflow-y-scroll ${expanded === pl.id && pl.tracks && pl.tracks.length > 0 ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
               >
                 {expanded === pl.id && pl.tracks && pl.tracks.length > 0 && (
                   <div className="border-t border-gray-100 dark:border-gray-700 p-4">

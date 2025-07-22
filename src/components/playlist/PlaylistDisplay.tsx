@@ -75,7 +75,7 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
     };
   }, [audio]);
 
-  console.log("playlist from playlist display", playlist);
+  // console.log("playlist from playlist display", playlist);
 
   const handleSaveToSpotify = async () => {
     setSaving(true);
