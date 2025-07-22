@@ -25,6 +25,7 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
     const seconds = Math.floor((ms % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
+  console.log("playlist from playlist display", playlist);
 
   const handleSaveToSpotify = async () => {
     try {
@@ -33,7 +34,7 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ playlistId: playlist.id }),
+        body: JSON.stringify({ playlistId: playlist.id, tracks: playlist.tracks }),
       });
 
       if (!response.ok) {
