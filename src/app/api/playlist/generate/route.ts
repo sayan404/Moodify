@@ -137,6 +137,35 @@ export async function POST(request: Request) {
   const addTracksData = await addTracksRes.json();
   console.log("[AI-Playlist] Add tracks response:", addTracksData);
 
+  // --- Save playlist and tracks to DB ---
+  try {
+    const { PrismaClient } = await import("@prisma/client");
+    const prisma = new PrismaClient();
+
+    // Create playlist in DB
+    const dbPlaylist = await prisma.playlist.create({
+      data: {
+        name: playlistData.name,
+        spotifyPlaylistId: playlistData.id,
+        sentiment: aiResult.mood || aiResult.theme || null,
+        user: { connect: { id: session.user.id } },
+        tracks: {
+          create: foundTracks.map(track => ({
+            spotifyId: track.id,
+            name: track.name,
+            artists: track.artists,
+            albumName: track.albumName,
+            duration: track.duration,
+          }))
+        }
+      },
+      include: { tracks: true }
+    });
+    console.log("[AI-Playlist] Saved playlist to DB:", dbPlaylist.id);
+  } catch (err) {
+    console.error("[AI-Playlist] Error saving playlist to DB:", err);
+  }
+
   return NextResponse.json({
     playlist: {
       id: playlistData.id,

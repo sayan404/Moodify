@@ -43,6 +43,25 @@ export const options: NextAuthOptions = {
       if (!account || !profile) {
         return false;
       }
+      // Upsert user in DB
+      const prisma = new PrismaClient();
+      await prisma.user.upsert({
+        where: { id: account.providerAccountId },
+        update: {
+          email: user.email,
+          name: user.name,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token,
+        },
+        create: {
+          id: account.providerAccountId,
+          email: user.email ?? "",
+          name: user.name ?? null,
+          accessToken: account.access_token ?? "",
+          refreshToken: account.refresh_token ?? "",
+          spotifyId: account.providerAccountId,
+        },
+      });
       return true;
     },
     async jwt({ token, account, profile }) {
