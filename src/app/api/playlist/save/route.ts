@@ -94,4 +94,39 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request: Request) {
+  try {
+    const prisma = new PrismaClient();
+    const url = new URL(request.url);
+    const mine = url.searchParams.get("mine");
+    let playlists;
+    if (mine === "true") {
+      const session = await getServerSession(options) as Session;
+      if (!session?.user?.id) {
+        return NextResponse.json({ playlists: [] });
+      }
+      playlists = await prisma.playlist.findMany({
+        where: { userId: session.user.id },
+        include: {
+          tracks: true,
+          user: { select: { id: true, name: true, email: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    } else {
+      playlists = await prisma.playlist.findMany({
+        include: {
+          tracks: true,
+          user: { select: { id: true, name: true, email: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    return NextResponse.json({ playlists });
+  } catch (error) {
+    console.error("[Save-Playlist] Error fetching playlists:", error);
+    return NextResponse.json({ error: "Failed to fetch playlists" }, { status: 500 });
+  }
 } 

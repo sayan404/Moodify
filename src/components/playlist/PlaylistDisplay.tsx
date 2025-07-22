@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface Track {
   id: string;
   name: string;
@@ -14,6 +16,7 @@ interface Playlist {
   name: string;
   tracks: Track[];
   mood: string;
+  url?: string; // Added url property
 }
 
 interface PlaylistDisplayProps {
@@ -21,6 +24,7 @@ interface PlaylistDisplayProps {
 }
 
 export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
+  const [saved, setSaved] = useState(false);
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
@@ -41,7 +45,7 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
       if (!response.ok) {
         throw new Error("Failed to save playlist");
       }
-
+      setSaved(true);
       // Handle success (e.g., show a notification)
     } catch (error) {
       console.error("Error saving playlist:", error);
@@ -56,12 +60,24 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
           <h2 className="text-2xl font-bold">{playlist.name}</h2>
           <p className="text-gray-600">Based on mood: {playlist.mood}</p>
         </div>
-        <button
-          onClick={handleSaveToSpotify}
-          className="bg-[#1DB954] text-white px-6 py-2 rounded-full hover:bg-[#1ed760] transition-colors"
-        >
-          Save to Spotify
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSaveToSpotify}
+            className="bg-[#1DB954] text-white px-6 py-2 rounded-full hover:bg-[#1ed760] transition-colors"
+          >
+            {saved ? "Saved" : "Save to Spotify"}
+          </button>
+          {playlist.url && saved && (
+            <a
+              href={playlist.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors flex items-center"
+            >
+              Open in Spotify
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">
