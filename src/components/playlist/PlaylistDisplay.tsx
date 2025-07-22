@@ -115,7 +115,7 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
       <>
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{playlist.name}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{playlist.name}</h2>
             <p className="text-gray-500 mt-1">Based on mood: {playlist.mood}</p>
           </div>
           <div className="flex gap-2">
@@ -149,12 +149,12 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
           {tracks.map((track, index) => (
             <div
               key={track.id}
-              className="flex items-center justify-between p-3 hover:bg-gray-50 rounded transition-colors"
+              className="flex items-center justify-between p-3 hover:bg-white/5 dark:hover:bg-gray-800 rounded transition-colors"
             >
               <div className="flex items-center gap-4">
                 <span className="text-gray-400 w-6">{index + 1}.</span>
                 <div>
-                  <p className="text-gray-900">{track.name}</p>
+                  <p className="text-gray-900 dark:text-white">{track.name}</p>
                   <p className="text-sm text-gray-500">
                     {track.artists.join(", ")} • {track.albumName}
                   </p>
@@ -164,7 +164,7 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
                 <span className="text-gray-400 text-sm font-mono">
                   {formatDuration(track.duration)}
                 </span>
-                <button
+                {/* <button
                   className={`${
                     track.preview_url 
                       ? 'bg-gray-900 hover:bg-black' 
@@ -177,7 +177,7 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
                     {playingTrackId === track.id ? '⏸️' : '▶️'}
                   </span>
                   {playingTrackId === track.id ? 'Stop' : 'Play'}
-                </button>
+                </button> */}
                 <button
                   onClick={async () => {
                     if (!window.confirm(`Delete song "${track.name}" from playlist?`)) return;
