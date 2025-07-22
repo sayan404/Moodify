@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { NextAuthProvider } from "../components/providers/NextAuthProvider";
+import { ThemeProvider } from "../components/providers/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,9 +16,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
-      <body className={`${inter.className} min-h-full`}>
-        <NextAuthProvider>{children}</NextAuthProvider>
+    <html lang="en" className="dark">
+      <body className={`${inter.className} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100`}>
+        <NextAuthProvider>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </NextAuthProvider>
       </body>
     </html>
   );
