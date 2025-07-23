@@ -36,7 +36,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   const [selectedTrackUri, setSelectedTrackUri] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('[PlaylistDisplay] Initial playlist:', initialPlaylist);
+    // console.log('[PlaylistDisplay] Initial playlist:', initialPlaylist);
     setPlaylist(initialPlaylist);
   }, [initialPlaylist]);
 
@@ -47,17 +47,17 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   };
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    console.log(`[PlaylistDisplay] Showing toast: ${type} - ${message}`);
+    // console.log(`[PlaylistDisplay] Showing toast: ${type} - ${message}`);
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
   const handlePlayTrack = (track: Track) => {
-    console.log('[PlaylistDisplay] Play/Pause track:', {
-      track: track.name,
-      currentlyPlaying: selectedTrackUri === track.uri,
-      uri: track.uri
-    });
+    // console.log('[PlaylistDisplay] Play/Pause track:', {
+    //   track: track.name,
+    //   currentlyPlaying: selectedTrackUri === track.uri,
+    //   uri: track.uri
+    // });
 
     if (selectedTrackUri === track.uri) {
       setSelectedTrackUri(null);
@@ -67,7 +67,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   };
 
   const handleSaveToSpotify = async () => {
-    console.log('[PlaylistDisplay] Saving playlist to Spotify...');
+    // console.log('[PlaylistDisplay] Saving playlist to Spotify...');
     setSaving(true);
     try {
       const response = await fetch("/api/playlist/save", {
@@ -76,7 +76,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
         body: JSON.stringify({ playlistId: playlist.id, dbPlaylistId: playlist.dbPlaylistId, tracks: playlist.tracks }),
       });
 
-      console.log('[PlaylistDisplay] Save response status:', response.status);
+      // console.log('[PlaylistDisplay] Save response status:', response.status);
       if (!response.ok) throw new Error("Failed to save playlist");
       
       setSaved(true);
@@ -90,7 +90,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   };
 
   const handleDeleteTrack = async (trackToDelete: Track) => {
-    console.log('[PlaylistDisplay] Deleting track:', trackToDelete.name);
+    // console.log('[PlaylistDisplay] Deleting track:', trackToDelete.name);
     setPlaylist(prev => ({
       ...prev,
       tracks: prev.tracks.filter(t => t.id !== trackToDelete.id)
@@ -102,7 +102,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dbPlaylistId: playlist.dbPlaylistId, trackId: trackToDelete.id }),
       });
-      console.log('[PlaylistDisplay] Delete track response status:', response.status);
+      // console.log('[PlaylistDisplay] Delete track response status:', response.status);
     } catch (error) {
       console.error("[PlaylistDisplay] Failed to delete track from DB:", error);
     }

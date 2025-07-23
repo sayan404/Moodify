@@ -27,13 +27,13 @@ export default function AllPlaylistsPage() {
   const [selectedTrack, setSelectedTrack] = useState<{id: string; playlistId: string} | null>(null);
 
   useEffect(() => {
-    console.log('[AllPlaylistsPage] Fetching playlists...');
+    // console.log('[AllPlaylistsPage] Fetching playlists...');
     async function fetchPlaylists() {
       setLoading(true);
       try {
         const res = await fetch("/api/playlist/save?mine=true");
         const data = await res.json();
-        console.log('[AllPlaylistsPage] Fetched playlists:', data.playlists);
+        // console.log('[AllPlaylistsPage] Fetched playlists:', data.playlists);
         setPlaylists(data.playlists || []);
       } catch (e) {
         console.error('[AllPlaylistsPage] Error fetching playlists:', e);
@@ -46,12 +46,12 @@ export default function AllPlaylistsPage() {
   }, []);
 
   const handlePlayTrack = (track: Track, playlistId: string) => {
-    console.log('[AllPlaylistsPage] Play/Pause track:', {
-      track: track.name,
-      currentlyPlaying: selectedTrack?.id === track.id,
-      spotifyId: track.spotifyId,
-      playlistId
-    });
+    // console.log('[AllPlaylistsPage] Play/Pause track:', {
+    //   track: track.name,
+    //   currentlyPlaying: selectedTrack?.id === track.id,
+    //   spotifyId: track.spotifyId,
+    //   playlistId
+    // });
 
     if (selectedTrack?.id === track.id && selectedTrack?.playlistId === playlistId) {
       setSelectedTrack(null);
@@ -61,7 +61,7 @@ export default function AllPlaylistsPage() {
   };
 
   const handleDeleteTrack = async (playlistId: string, trackId: string) => {
-    console.log('[AllPlaylistsPage] Deleting track:', { playlistId, trackId });
+    // console.log('[AllPlaylistsPage] Deleting track:', { playlistId, trackId });
     
     if (selectedTrack?.playlistId === playlistId) {
       setSelectedTrack(null);
@@ -79,7 +79,7 @@ export default function AllPlaylistsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dbPlaylistId: playlistId, trackId }),
       });
-      console.log('[AllPlaylistsPage] Delete track response:', response.status);
+      // console.log('[AllPlaylistsPage] Delete track response:', response.status);
     } catch (error) {
       console.error('[AllPlaylistsPage] Error deleting track:', error);
     }
@@ -87,7 +87,7 @@ export default function AllPlaylistsPage() {
 
   const handleDeletePlaylist = async (playlistId: string) => {
     if (!window.confirm("Are you sure you want to delete this entire playlist? This cannot be undone.")) return;
-    console.log('[AllPlaylistsPage] Deleting playlist:', playlistId);
+    // console.log('[AllPlaylistsPage] Deleting playlist:', playlistId);
     
     if (selectedTrack?.playlistId === playlistId) {
       setSelectedTrack(null);
@@ -100,7 +100,7 @@ export default function AllPlaylistsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dbPlaylistId: playlistId }),
       });
-      console.log('[AllPlaylistsPage] Delete playlist response:', response.status);
+      // console.log('[AllPlaylistsPage] Delete playlist response:', response.status);
     } catch (error) {
       console.error('[AllPlaylistsPage] Error deleting playlist:', error);
     }

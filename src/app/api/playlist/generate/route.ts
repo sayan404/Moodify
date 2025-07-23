@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { options } from "../../auth/[...nextauth]/options";
+import { PrismaClient } from "@prisma/client";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
+const MAX_PLAYLISTS_PER_USER = 10;
 
 export async function POST(request: Request) {
   console.log("[AI-Playlist] Start request");
@@ -16,6 +18,19 @@ export async function POST(request: Request) {
   if (!session?.user || !session.accessToken) {
     console.log("[AI-Playlist] Unauthorized");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check user's playlist count
+  const prisma = new PrismaClient();
+  const playlistCount = await prisma.playlist.count({
+    where: { userId: session.user.id }
+  });
+
+  if (playlistCount >= MAX_PLAYLISTS_PER_USER) {
+    console.log("[AI-Playlist] User has reached playlist limit");
+    return NextResponse.json({ 
+      error: "You have reached the maximum limit of 10 playlists. Please delete some playlists to create new ones." 
+    }, { status: 403 });
   }
 
   const body = await request.json();
@@ -187,9 +202,6 @@ export async function POST(request: Request) {
 
   // --- Save playlist and tracks to DB ---
   try {
-    const { PrismaClient } = await import("@prisma/client");
-    const prisma = new PrismaClient();
-
     // First, ensure user exists in DB
     console.log("[AI-Playlist] Ensuring user exists in DB:", session.user.id);
     const user = await prisma.user.upsert({

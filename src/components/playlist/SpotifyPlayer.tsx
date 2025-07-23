@@ -20,14 +20,17 @@ const SpotifyPlayer = ({ trackUri }: SpotifyPlayerProps) => {
   const [isSDKReady, setIsSDKReady] = useState(false);
   const [player, setPlayer] = useState<any>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
 
   // Set up the callback before loading the script
   useEffect(() => {
-    console.log('[SpotifyPlayer] Setting up SDK callback');
-    window.onSpotifyWebPlaybackSDKReady = () => {
-      console.log('[SpotifyPlayer] SDK ready');
-      setIsSDKReady(true);
-    };
+    if (!window.onSpotifyWebPlaybackSDKReady) {
+      window.onSpotifyWebPlaybackSDKReady = () => {
+        // console.log('[SpotifyPlayer] Setting up SDK callback');
+        setIsSDKReady(true);
+        // console.log('[SpotifyPlayer] SDK ready');
+      };
+    }
 
     return () => {
       window.onSpotifyWebPlaybackSDKReady = () => {};
@@ -35,40 +38,38 @@ const SpotifyPlayer = ({ trackUri }: SpotifyPlayerProps) => {
   }, []);
 
   useEffect(() => {
-    console.log('[SpotifyPlayer] Session status:', status);
-    console.log('[SpotifyPlayer] Session data:', session);
-    console.log('[SpotifyPlayer] Track URI:', trackUri);
-    console.log('[SpotifyPlayer] SDK Ready:', isSDKReady);
-  }, [session, status, trackUri, isSDKReady]);
+    // console.log('[SpotifyPlayer] Session status:', status);
+    // console.log('[SpotifyPlayer] Session data:', session);
+    // console.log('[SpotifyPlayer] Track URI:', trackUri);
+    // console.log('[SpotifyPlayer] SDK Ready:', isSDKReady);
 
-  useEffect(() => {
     if (!isSDKReady) {
-      console.log('[SpotifyPlayer] Waiting for SDK to be ready...');
-      return;
-    }
-    if (!session?.accessToken) {
-      console.log('[SpotifyPlayer] No access token available');
+      // console.log('[SpotifyPlayer] Waiting for SDK to be ready...');
       return;
     }
 
-    console.log('[SpotifyPlayer] Initializing Spotify Player...');
+    if (!session?.accessToken) {
+      // console.log('[SpotifyPlayer] No access token available');
+      return;
+    }
+
+    // console.log('[SpotifyPlayer] Initializing Spotify Player...');
     const player = new window.Spotify.Player({
-      name: 'Song Suggester Web Player',
-      getOAuthToken: (cb: (token: string) => void) => {
-        console.log('[SpotifyPlayer] Getting OAuth token...');
-        cb(session.accessToken as string);
+      name: 'Moodify Web Player',
+      getOAuthToken: cb => {
+        // console.log('[SpotifyPlayer] Getting OAuth token...');
+        cb(session.accessToken);
       },
       volume: 0.5
     });
 
-    player.addListener('ready', ({ device_id }: { device_id: string }) => {
-      console.log('[SpotifyPlayer] Player ready with Device ID:', device_id);
-      setPlayer(player);
-      setPlayerError(null);
+    player.addListener('ready', ({ device_id }) => {
+      // console.log('[SpotifyPlayer] Player ready with Device ID:', device_id);
+      setDeviceId(device_id);
     });
 
-    player.addListener('not_ready', ({ device_id }: { device_id: string }) => {
-      console.log('[SpotifyPlayer] Device ID has gone offline:', device_id);
+    player.addListener('not_ready', ({ device_id }) => {
+      // console.log('[SpotifyPlayer] Device ID has gone offline:', device_id);
     });
 
     player.addListener('initialization_error', ({ message }: { message: string }) => {
@@ -86,10 +87,10 @@ const SpotifyPlayer = ({ trackUri }: SpotifyPlayerProps) => {
       setPlayerError('Premium account required');
     });
 
-    console.log('[SpotifyPlayer] Connecting player...');
-    player.connect().then((success: boolean) => {
+    // console.log('[SpotifyPlayer] Connecting player...');
+    player.connect().then(success => {
       if (success) {
-        console.log('[SpotifyPlayer] Successfully connected to Spotify');
+        // console.log('[SpotifyPlayer] Successfully connected to Spotify');
       } else {
         console.error('[SpotifyPlayer] Failed to connect to Spotify');
         setPlayerError('Failed to connect to Spotify');
@@ -97,49 +98,56 @@ const SpotifyPlayer = ({ trackUri }: SpotifyPlayerProps) => {
     });
 
     return () => {
-      console.log('[SpotifyPlayer] Cleaning up player...');
+      // console.log('[SpotifyPlayer] Cleaning up player...');
       player.disconnect();
     };
-  }, [isSDKReady, session?.accessToken]);
+  }, [isSDKReady, session]);
 
   useEffect(() => {
-    if (!player || !trackUri || !session?.accessToken) {
-      console.log('[SpotifyPlayer] Play conditions not met:', {
-        hasPlayer: !!player,
-        hasTrackUri: !!trackUri,
-        hasAccessToken: !!session?.accessToken
-      });
+    if (!player || !deviceId || !trackUri || !session?.accessToken) {
+      // console.log('[SpotifyPlayer] Play conditions not met:', {
+      //   hasPlayer: !!player,
+      //   hasDeviceId: !!deviceId,
+      //   hasTrackUri: !!trackUri,
+      //   hasAccessToken: !!session?.accessToken
+      // });
       return;
     }
 
-    const play = async () => {
-      console.log('[SpotifyPlayer] Attempting to play track:', trackUri);
-      try {
-        const response = await fetch('https://api.spotify.com/v1/me/player/play', {
-          method: 'PUT',
-          body: JSON.stringify({ uris: [trackUri] }),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.accessToken}`
-          },
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          console.error('[SpotifyPlayer] Play error:', error);
-          setPlayerError(`Playback failed: ${error.error?.message || 'Unknown error'}`);
-        } else {
-          console.log('[SpotifyPlayer] Playback started successfully');
-          setPlayerError(null);
-        }
-      } catch (error) {
-        console.error('[SpotifyPlayer] Play error:', error);
-        setPlayerError('Failed to start playback');
+    // console.log('[SpotifyPlayer] Attempting to play track:', trackUri);
+    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ uris: [trackUri] }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.accessToken}`
+      },
+    })
+    .then(response => {
+      if (response.status === 204) {
+        // console.log('[SpotifyPlayer] Playback started successfully');
       }
+    })
+    .catch(error => {
+      console.error('[SpotifyPlayer] Error starting playback:', error);
+    });
+  }, [player, deviceId, trackUri, session]);
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://sdk.scdn.co/spotify-player.js";
+    script.async = true;
+
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      // console.log('[SpotifyPlayer] SDK script loaded');
     };
 
-    play();
-  }, [trackUri, player, session?.accessToken]);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   return (
     <>
@@ -147,7 +155,7 @@ const SpotifyPlayer = ({ trackUri }: SpotifyPlayerProps) => {
         src="https://sdk.scdn.co/spotify-player.js"
         strategy="lazyOnload"
         onLoad={() => {
-          console.log('[SpotifyPlayer] SDK script loaded');
+          // console.log('[SpotifyPlayer] SDK script loaded');
         }}
       />
       <div className="w-full max-w-2xl mx-auto p-4 bg-gray-800 rounded-lg shadow-lg">

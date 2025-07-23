@@ -3,6 +3,9 @@ import { useState } from "react";
 import MoodInput from "../../../components/playlist/MoodInput";
 import PlaylistDisplay from "../../../components/playlist/PlaylistDisplay";
 import { AnimatePresence, motion } from "framer-motion";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import Link from "next/link";
 
 export default function CreatePlaylistPage() {
   const [generatedPlaylist, setGeneratedPlaylist] = useState(null);
@@ -37,36 +40,42 @@ export default function CreatePlaylistPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8 text-center">
-        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-4xl mb-2">
-          Create a New Playlist
-        </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto text-sm">
-          Describe your mood or the vibe you're looking for, and let our AI craft the perfect playlist for you.
-        </p>
-      </div>
-
-      <MoodInput onSubmit={handleMoodSubmit} isLoading={isLoading} />
-
-      <AnimatePresence>
+    <div className="container mx-auto px-4 py-8">
+      <AnimatePresence mode="wait">
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="mt-8 text-center bg-destructive/10 text-destructive p-4 rounded-md"
+            exit={{ opacity: 0 }}
+            className="mb-6"
           >
-            <p>{error}</p>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="ml-2">
+                {error}
+                {error.includes("maximum limit") && (
+                  <Link href="/dashboard/all" className="ml-2 underline">
+                    Go to your playlists
+                  </Link>
+                )}
+              </AlertDescription>
+            </Alert>
           </motion.div>
         )}
-
-        {generatedPlaylist && (
+        {!generatedPlaylist ? (
           <motion.div
+            key="input"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="mt-8"
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <MoodInput onSubmit={handleMoodSubmit} isLoading={isLoading} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="display"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
           >
             <PlaylistDisplay playlist={generatedPlaylist} />
           </motion.div>
