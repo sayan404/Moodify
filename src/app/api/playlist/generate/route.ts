@@ -110,7 +110,15 @@ export async function POST(request: Request) {
   }
 
   // 2. Search Spotify for each suggested song
-  const foundTracks: { id: string, uri: string, name: string, artists: string[], albumName: string, duration: number }[] = [];
+  const foundTracks: {
+    id: string,
+    uri: string,
+    name: string,
+    artists: string[],
+    albumName: string,
+    duration: number,
+    preview_url: string | null
+  }[] = [];
   for (const song of aiResult.suggested_songs || []) {
     const q = encodeURIComponent(`${song.title} ${song.artist}`);
     console.log("[AI-Playlist] Searching Spotify for:", song.title, "by", song.artist);
@@ -129,6 +137,7 @@ export async function POST(request: Request) {
         artists: track.artists.map((a: any) => a.name),
         albumName: track.album?.name ?? "",
         duration: track.duration_ms ?? 0,
+        preview_url: track.preview_url ?? null,  // Add preview URL
       });
       console.log("[AI-Playlist] Found track:", track.name, "by", track.artists.map((a: any) => a.name).join(", "));
     } else {
@@ -217,6 +226,7 @@ export async function POST(request: Request) {
             artists: track.artists,
             albumName: track.albumName,
             duration: track.duration,
+            preview_url: track.preview_url,
           }))
         }
       },

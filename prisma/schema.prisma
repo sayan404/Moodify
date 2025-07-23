@@ -38,16 +38,17 @@ model Playlist {
 
 /// @map("tracks")
 model Track {
-  id         String   @id @default(cuid())
-  spotifyId  String
-  name       String
-  artists    String[]
-  albumName  String
-  duration   Int
-  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
-  playlistId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  spotifyId   String
+  name        String
+  artists     String[]
+  albumName   String
+  duration    Int
+  preview_url String?
+  playlist    Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  playlistId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([playlistId])
 }
