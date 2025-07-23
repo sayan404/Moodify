@@ -36,6 +36,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   const [selectedTrackUri, setSelectedTrackUri] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[PlaylistDisplay] Initial playlist:', initialPlaylist);
     setPlaylist(initialPlaylist);
   }, [initialPlaylist]);
 
@@ -46,11 +47,18 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   };
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    console.log(`[PlaylistDisplay] Showing toast: ${type} - ${message}`);
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
   const handlePlayTrack = (track: Track) => {
+    console.log('[PlaylistDisplay] Play/Pause track:', {
+      track: track.name,
+      currentlyPlaying: selectedTrackUri === track.uri,
+      uri: track.uri
+    });
+
     if (selectedTrackUri === track.uri) {
       setSelectedTrackUri(null);
     } else {
@@ -59,6 +67,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   };
 
   const handleSaveToSpotify = async () => {
+    console.log('[PlaylistDisplay] Saving playlist to Spotify...');
     setSaving(true);
     try {
       const response = await fetch("/api/playlist/save", {
@@ -67,12 +76,13 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
         body: JSON.stringify({ playlistId: playlist.id, dbPlaylistId: playlist.dbPlaylistId, tracks: playlist.tracks }),
       });
 
+      console.log('[PlaylistDisplay] Save response status:', response.status);
       if (!response.ok) throw new Error("Failed to save playlist");
       
       setSaved(true);
       showToast('Playlist saved to your Spotify account!');
     } catch (error) {
-      console.error("Error saving playlist:", error);
+      console.error("[PlaylistDisplay] Error saving playlist:", error);
       showToast('Failed to save playlist.', 'error');
     } finally {
       setSaving(false);
@@ -80,20 +90,21 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   };
 
   const handleDeleteTrack = async (trackToDelete: Track) => {
+    console.log('[PlaylistDisplay] Deleting track:', trackToDelete.name);
     setPlaylist(prev => ({
       ...prev,
       tracks: prev.tracks.filter(t => t.id !== trackToDelete.id)
     }));
 
     try {
-      await fetch("/api/playlist/save/track", {
+      const response = await fetch("/api/playlist/save/track", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dbPlaylistId: playlist.dbPlaylistId, trackId: trackToDelete.id }),
       });
+      console.log('[PlaylistDisplay] Delete track response status:', response.status);
     } catch (error) {
-      console.error("Failed to delete track from DB:", error);
-      // Optionally revert state or show an error
+      console.error("[PlaylistDisplay] Failed to delete track from DB:", error);
     }
   };
 
@@ -150,7 +161,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
               <span className="text-muted-foreground text-sm w-6 text-center">{index + 1}</span>
               <button
                 onClick={() => handlePlayTrack(track)}
-                className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-muted/50 group-hover:bg-primary/10 transition-colors"
+                className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-muted/50 hover:bg-primary/10 cursor-pointer transition-colors"
               >
                 {selectedTrackUri === track.uri ? <Pause className="h-5 w-5 text-primary" /> : <Play className="h-5 w-5 text-primary" />}
               </button>
@@ -167,7 +178,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
               </span>
               <button
                 onClick={() => handleDeleteTrack(track)}
-                className="p-2 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                className="p-2 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
