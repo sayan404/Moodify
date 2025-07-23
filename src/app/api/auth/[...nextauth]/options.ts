@@ -26,19 +26,6 @@ if (!process.env.NEXTAUTH_SECRET) {
   throw new Error("Missing NEXTAUTH_SECRET");
 }
 
-// Add mock session for development
-const mockSession = {
-  user: {
-    id: "mock_user_id",
-    name: "Dev User",
-    email: "dev@example.com",
-    image: null,
-  },
-  accessToken: "mock_access_token",
-  refreshToken: "mock_refresh_token",
-  expires: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(), // 24 hours
-};
-
 export const options: NextAuthOptions = {
   providers: [
     SpotifyProvider({
@@ -56,10 +43,6 @@ export const options: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // In development, always allow sign in
-      if (process.env.NODE_ENV === 'development') {
-        return true;
-      }
       if (!account || !profile) {
         return false;
       }
@@ -84,18 +67,7 @@ export const options: NextAuthOptions = {
       });
       return true;
     },
-    async jwt({ token, account, profile }) {
-      // In development, return mock token
-      if (process.env.NODE_ENV === 'development') {
-        return {
-          ...token,
-          accessToken: mockSession.accessToken,
-          refreshToken: mockSession.refreshToken,
-          accessTokenExpires: Date.now() + 1000 * 60 * 60 * 24,
-          sub: mockSession.user.id,
-        };
-      }
-
+    async jwt({ token, account }) {
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
@@ -143,23 +115,12 @@ export const options: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      // In development, return mock session
-      if (process.env.NODE_ENV === 'development') {
-        return {
-          ...session,
-          ...mockSession,
-        };
-      }
-
       if (token.accessToken) {
         session.accessToken = token.accessToken as string;
         if (token.error) {
           session.error = token.error as string;
         }
       }
-      // Add the Spotify user ID to the session
-      console.log("session from session callback", session);
-      console.log("token from session callback", token);
 
       if (session.user && token.sub) {
         session.user.id = token.sub;
@@ -170,5 +131,4 @@ export const options: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  debug: process.env.NODE_ENV === "development",
 };

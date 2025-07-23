@@ -3,15 +3,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  // In development, bypass authentication
-  if (process.env.NODE_ENV === 'development') {
-    // If trying to access login page in dev mode, redirect to dashboard
-    if (request.nextUrl.pathname === "/login") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-    return NextResponse.next();
-  }
-
   const token = await getToken({ req: request });
   const isPublicPath = request.nextUrl.pathname === "/login";
 

@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "../providers/ThemeProvider";
-import { Home, PlusCircle, Music, Moon, Sun, X, Music4, Coffee } from "lucide-react";
+import { Home, PlusCircle, Music, Moon, Sun, X, Music4, Coffee, LogOut } from "lucide-react";
 import { Fragment } from "react";
 
 interface SidebarProps {
@@ -14,8 +14,31 @@ interface SidebarProps {
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
+
+  const handleLogout = async () => {
+    try {
+      // Revoke Spotify token
+      if (session?.accessToken) {
+        await fetch('https://accounts.spotify.com/api/token/revoke', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `token=${session.accessToken}`,
+        });
+      }
+      
+      // Sign out from NextAuth
+      await signOut({ redirect: true, callbackUrl: '/login' });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Still sign out even if token revocation fails
+      await signOut({ redirect: true, callbackUrl: '/login' });
+    }
+  };
 
   const navigation = [
     { name: "Create Playlist", href: "/dashboard/create", icon: PlusCircle },
@@ -73,6 +96,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
               <Coffee className="h-5 w-5" />
               <span>Buy Me a Coffee</span>
             </a>
+            <button
+              onClick={handleLogout}
+              className="group -mx-2 flex w-full items-center gap-x-3 rounded-md p-3 text-sm font-semibold leading-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Logout</span>
+            </button>
           </li>
         </ul>
       </nav>
