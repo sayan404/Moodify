@@ -1,4 +1,5 @@
 node_modules
+.next
 .env
 .env.local
 .env.development.local
@@ -19,6 +20,9 @@ prisma/dev.db-trace
 prisma/dev.db-trace-wal
 prisma/dev.db-trace-wal-journal
 package-lock.json
+
 yarn.lock
 yarn-error.log
-.next
+
+
+

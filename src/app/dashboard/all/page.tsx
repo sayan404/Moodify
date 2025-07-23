@@ -78,7 +78,7 @@ export default function AllPlaylistsPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-8 text-center">Your Playlists</h1>
+      <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-4xl mb-8 text-center">Your Playlists</h1>
       {playlists.length === 0 ? (
         <div className="text-center py-16 px-4 bg-card border rounded-lg">
             <Music className="mx-auto h-12 w-12 text-muted-foreground" />

@@ -39,10 +39,10 @@ export default function CreatePlaylistPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-2">
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-4xl mb-2">
           Create a New Playlist
         </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-muted-foreground max-w-2xl mx-auto text-sm">
           Describe your mood or the vibe you're looking for, and let our AI craft the perfect playlist for you.
         </p>
       </div>
