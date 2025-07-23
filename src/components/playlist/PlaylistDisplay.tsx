@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Check, Copy, Loader2, Music, Play, Pause, Trash2, ExternalLink } from "lucide-react";
+import { FaSpotify } from "react-icons/fa";
 
 interface Track {
   id: string;
@@ -8,7 +10,7 @@ interface Track {
   artists: string[];
   albumName: string;
   duration: number;
-  preview_url?: string; // Added preview_url property
+  preview_url?: string;
 }
 
 interface Playlist {
@@ -17,21 +19,24 @@ interface Playlist {
   name: string;
   tracks: Track[];
   mood: string;
-  url?: string; // Added url property
+  url?: string;
 }
 
 interface PlaylistDisplayProps {
   playlist: Playlist;
 }
 
-export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
+export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistDisplayProps) {
+  const [playlist, setPlaylist] = useState(initialPlaylist);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [trackDeleting, setTrackDeleting] = useState<string | null>(null);
-  const [tracks, setTracks] = useState(playlist.tracks);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    setPlaylist(initialPlaylist);
+  }, [initialPlaylist]);
 
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
@@ -39,173 +44,150 @@ export default function PlaylistDisplay({ playlist }: PlaylistDisplayProps) {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const handlePlayPreview = (trackId: string, previewUrl: string | null) => {
-    if (!previewUrl) {
-      setToast({ type: 'error', message: 'No preview available for this song' });
-      setTimeout(() => setToast(null), 3000);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handlePlayPreview = (track: Track) => {
+    if (!track.preview_url) {
+      showToast('No preview available for this song', 'error');
       return;
     }
     
-    if (playingTrackId === trackId && audio) {
+    if (playingTrackId === track.id && audio) {
       audio.pause();
       setPlayingTrackId(null);
-      setAudio(null);
     } else {
-      if (audio) {
-        audio.pause();
-      }
-      const newAudio = new Audio(previewUrl);
-      newAudio.play();
-      newAudio.onended = () => {
-        setPlayingTrackId(null);
-        setAudio(null);
-      };
-      setPlayingTrackId(trackId);
+      if (audio) audio.pause();
+      const newAudio = new Audio(track.preview_url);
       setAudio(newAudio);
+      newAudio.play();
+      newAudio.onended = () => setPlayingTrackId(null);
+      setPlayingTrackId(track.id);
     }
   };
 
-  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
       if (audio) {
         audio.pause();
-        setAudio(null);
       }
     };
   }, [audio]);
-
-  // console.log("playlist from playlist display", playlist);
 
   const handleSaveToSpotify = async () => {
     setSaving(true);
     try {
       const response = await fetch("/api/playlist/save", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playlistId: playlist.id, dbPlaylistId: playlist.dbPlaylistId, tracks: playlist.tracks }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to save playlist");
-      }
+      if (!response.ok) throw new Error("Failed to save playlist");
+      
       setSaved(true);
-      setToast({ type: 'success', message: 'Playlist saved to Spotify!' });
+      showToast('Playlist saved to your Spotify account!');
     } catch (error) {
       console.error("Error saving playlist:", error);
-      setToast({ type: 'error', message: 'Failed to save playlist.' });
+      showToast('Failed to save playlist.', 'error');
     } finally {
       setSaving(false);
-      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const handleDeleteTrack = async (trackToDelete: Track) => {
+    setPlaylist(prev => ({
+      ...prev,
+      tracks: prev.tracks.filter(t => t.id !== trackToDelete.id)
+    }));
+
+    try {
+      await fetch("/api/playlist/save/track", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dbPlaylistId: playlist.dbPlaylistId, trackId: trackToDelete.id }),
+      });
+    } catch (error) {
+      console.error("Failed to delete track from DB:", error);
+      // Optionally revert state or show an error
     }
   };
 
   return (
-    <div>
-      {/* Toast notification */}
+    <div className="bg-card border rounded-xl shadow-sm p-6 sm:p-8">
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 px-6 py-3 rounded-lg text-white text-sm ${
-          toast.type === 'success' ? 'bg-gray-900' : 'bg-red-600'
+        <div className={`fixed top-5 right-5 z-50 px-4 py-2 rounded-md text-sm font-semibold shadow-lg ${
+          toast.type === 'success' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'
         }`}>
           {toast.message}
         </div>
       )}
-      <>
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{playlist.name}</h2>
-            <p className="text-gray-500 mt-1">Based on mood: {playlist.mood}</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleSaveToSpotify}
-              disabled={saving}
-              className="bg-black text-white px-4 py-2 rounded hover:bg-gray-900 transition-colors text-sm disabled:bg-gray-300 flex items-center gap-2"
-            >
-              {saving && (
-                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-              )}
-              {saved ? "Saved" : saving ? "Saving..." : "Save"}
-            </button>
-            {playlist.url && saved && (
-              <a
-                href={playlist.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-black transition-colors text-sm flex items-center"
-              >
-                Open in Spotify
-              </a>
-            )}
-          </div>
-        </div>
 
-        <div className="space-y-1">
-          {tracks.map((track, index) => (
-            <div
-              key={track.id}
-              className="flex items-center justify-between p-3 hover:bg-white/5 dark:hover:bg-gray-800 rounded transition-colors"
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">{playlist.name}</h2>
+          <p className="text-muted-foreground mt-1">Mood: <span className="font-semibold text-primary">{playlist.mood}</span></p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSaveToSpotify}
+            disabled={saving || saved}
+            className="px-4 py-2 rounded-md text-sm font-semibold bg-[#1DB954] text-white hover:bg-[#1DB954]/90 transition-colors disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <FaSpotify className="h-4 w-4" />}
+            {saved ? "Saved to Spotify" : saving ? "Saving..." : "Save to Spotify"}
+          </button>
+          {playlist.url && saved && (
+            <a
+              href={playlist.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-md text-sm font-semibold bg-secondary text-secondary-foreground hover:bg-muted transition-colors flex items-center"
             >
-              <div className="flex items-center gap-4">
-                <span className="text-gray-400 w-6">{index + 1}.</span>
-                <div>
-                  <p className="text-gray-900 dark:text-white">{track.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {track.artists.join(", ")} • {track.albumName}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400 text-sm font-mono">
-                  {formatDuration(track.duration)}
-                </span>
-                {/* <button
-                  className={`${
-                    track.preview_url 
-                      ? 'bg-gray-900 hover:bg-black' 
-                      : 'bg-gray-300 cursor-not-allowed'
-                  } text-white px-3 py-1 rounded transition-colors text-sm flex items-center gap-1`}
-                  onClick={() => handlePlayPreview(track.id, track.preview_url)}
-                  disabled={!track.preview_url}
-                >
-                  <span role="img" aria-label="Play">
-                    {playingTrackId === track.id ? '⏸️' : '▶️'}
-                  </span>
-                  {playingTrackId === track.id ? 'Stop' : 'Play'}
-                </button> */}
-                <button
-                  onClick={async () => {
-                    if (!window.confirm(`Delete song "${track.name}" from playlist?`)) return;
-                    setTrackDeleting(track.id);
-                    try {
-                      const res = await fetch("/api/playlist/save/track", {
-                        method: "DELETE",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ dbPlaylistId: playlist.dbPlaylistId, trackId: track.id }),
-                      });
-                      if (res.ok) {
-                        setTracks((prev) => prev.filter((t) => t.id !== track.id));
-                      }
-                    } finally {
-                      setTrackDeleting(null);
-                    }
-                  }}
-                  className="text-red-600 hover:text-red-700 px-3 py-1 rounded border border-red-200 hover:border-red-300 transition-colors disabled:opacity-60 text-sm flex items-center gap-1"
-                  disabled={trackDeleting === track.id}
-                >
-                  <span role="img" aria-label="Delete">🗑️</span>
-                  {trackDeleting === track.id ? "Deleting..." : "Delete"}
-                </button>
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {playlist.tracks.map((track, index) => (
+          <div
+            key={track.id}
+            className="flex items-center gap-4 p-3 hover:bg-secondary/50 rounded-md transition-colors group"
+          >
+            <div className="flex items-center gap-4 flex-1 truncate">
+              <span className="text-muted-foreground text-sm w-6 text-center">{index + 1}</span>
+              <button
+                onClick={() => handlePlayPreview(track)}
+                disabled={!track.preview_url}
+                className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-muted/50 group-hover:bg-primary/10 disabled:cursor-not-allowed transition-colors"
+              >
+                {playingTrackId === track.id ? <Pause className="h-5 w-5 text-primary" /> : <Play className="h-5 w-5 text-primary" />}
+              </button>
+              <div className="truncate">
+                <p className="text-foreground font-semibold truncate">{track.name}</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {track.artists.join(", ")}
+                </p>
               </div>
             </div>
-          ))}
-        </div>
-      </>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-sm font-mono hidden sm:block">
+                {formatDuration(track.duration)}
+              </span>
+              <button
+                onClick={() => handleDeleteTrack(track)}
+                className="p-2 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
-} 
+}

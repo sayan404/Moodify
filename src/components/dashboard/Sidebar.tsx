@@ -4,73 +4,110 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTheme } from "../providers/ThemeProvider";
+import { Home, PlusCircle, Music, Moon, Sun, X, Music4 } from "lucide-react";
+import { Fragment } from "react";
 
-export default function Sidebar() {
+interface SidebarProps {
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+}
+
+export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { isDarkMode, toggleDarkMode } = useTheme();
+  const { theme, setTheme } = useTheme();
 
-  return (
+  const navigation = [
+    { name: "Create Playlist", href: "/dashboard/create", icon: PlusCircle },
+    { name: "Your Playlists", href: "/dashboard/all", icon: Music },
+  ];
+
+  const NavLink = ({ item }: { item: typeof navigation[0] }) => (
+    <Link
+      href={item.href}
+      onClick={() => setSidebarOpen(false)}
+      className={`group flex items-center gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold transition-colors ${
+        pathname === item.href
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+      }`}
+    >
+      <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+      {item.name}
+    </Link>
+  );
+
+  const sidebarContent = (
     <>
-      <div className="fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 z-40">
-        {/* Logo/Brand Section */}
-        <div className="px-6 py-8 border-b border-gray-100 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Moodify
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">AI-Powered Playlists</p>
+      <div className="flex h-16 shrink-0 items-center gap-x-3 border-b px-6">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+          <Music4 className="h-5 w-5 text-primary-foreground" />
         </div>
-
-        {/* Navigation Links */}
-        <nav className="p-4">
-          <Link 
-            href="/dashboard/create" 
-            className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-all ${
-              pathname === '/dashboard/create' 
-                ? 'bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white' 
-                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            <span className="text-lg mr-3">🎼</span>
-            <span className="font-medium">Create Playlist</span>
-          </Link>
-
-          <Link 
-            href="/dashboard/all" 
-            className={`flex items-center px-4 py-3 rounded-lg transition-all ${
-              pathname === '/dashboard/all' 
-                ? 'bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white' 
-                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            <span className="text-lg mr-3">📚</span>
-            <span className="font-medium">Your Playlists</span>
-          </Link>
-
-          <button
-            onClick={toggleDarkMode}
-            className="flex items-center px-4 py-3 rounded-lg transition-all w-full text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
-            <span className="text-lg mr-3">{isDarkMode ? '🌞' : '🌙'}</span>
-            <span className="font-medium">{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
-        </nav>
-
-        {/* User Profile Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-gray-700">
-          <div className="flex items-center px-4 py-3">
-            <div className="w-9 h-9 rounded-full bg-gray-900 dark:bg-gray-100 flex items-center justify-center text-white dark:text-gray-900 text-sm font-medium">
-              {session?.user?.name?.[0] || '?'}
-            </div>
-            <div className="ml-3">
-              <p className="font-medium text-gray-900 dark:text-white">{session?.user?.name || 'User'}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[160px]">
-                {session?.user?.email || ''}
-              </p>
-            </div>
+        <h1 className="text-xl font-bold text-foreground">Moodify</h1>
+      </div>
+      <nav className="flex flex-1 flex-col p-4">
+        <ul role="list" className="flex flex-1 flex-col gap-y-7">
+          <li>
+            <ul role="list" className="-mx-2 space-y-1">
+              {navigation.map((item) => (
+                <li key={item.name}>
+                  <NavLink item={item} />
+                </li>
+              ))}
+            </ul>
+          </li>
+          <li className="mt-auto">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="group -mx-2 flex w-full gap-x-3 rounded-md p-3 text-sm font-semibold leading-6 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+      <div className="border-t p-4">
+        <div className="flex items-center gap-x-4">
+          <div className="h-10 w-10 flex-shrink-0 rounded-full bg-secondary flex items-center justify-center text-sm font-medium text-foreground">
+            {session?.user?.name?.[0]?.toUpperCase() || '?'}
+          </div>
+          <div className="truncate">
+            <p className="font-semibold text-foreground">{session?.user?.name || 'User'}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {session?.user?.email || ''}
+            </p>
           </div>
         </div>
       </div>
     </>
   );
-} 
+
+  return (
+    <>
+      {/* Mobile sidebar */}
+      <div className={`relative z-40 md:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 flex">
+          <div className={`relative mr-16 flex w-full max-w-xs flex-1 transform transition ease-in-out duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
+              <button type="button" className="-m-2.5 p-2.5" onClick={() => setSidebarOpen(false)}>
+                <X className="h-6 w-6 text-white" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background pb-4">
+              {sidebarContent}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Static sidebar for desktop */}
+      <div className="hidden md:fixed md:inset-y-0 md:z-40 md:flex md:w-64 md:flex-col">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r bg-background">
+          {sidebarContent}
+        </div>
+      </div>
+    </>
+  );
+}

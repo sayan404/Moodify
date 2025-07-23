@@ -1,13 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ExternalLink, ChevronDown, Loader2, Music, Pause, Play, Trash2 } from "lucide-react";
 
 export default function AllPlaylistsPage() {
-  const [allPlaylists, setAllPlaylists] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [trackDeleting, setTrackDeleting] = useState<string | null>(null);
-  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [playingTrack, setPlayingTrack] = useState<{ id: string; audio: HTMLAudioElement } | null>(null);
 
   useEffect(() => {
     async function fetchPlaylists() {
@@ -15,9 +14,9 @@ export default function AllPlaylistsPage() {
       try {
         const res = await fetch("/api/playlist/save?mine=true");
         const data = await res.json();
-        setAllPlaylists(data.playlists || []);
+        setPlaylists(data.playlists || []);
       } catch (e) {
-        setAllPlaylists([]);
+        setPlaylists([]);
       } finally {
         setLoading(false);
       }
@@ -25,152 +24,145 @@ export default function AllPlaylistsPage() {
     fetchPlaylists();
   }, []);
 
-  const handleDeleteTrack = async (playlistId: string, trackId: string) => {
-    if (!window.confirm("Delete this song from playlist?")) return;
-    setTrackDeleting(trackId);
-    try {
-      const res = await fetch("/api/playlist/save/track", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dbPlaylistId: playlistId, trackId }),
-      });
-      if (res.ok) {
-        setAllPlaylists((prev) =>
-          prev.map((pl) =>
-            pl.id === playlistId
-              ? { ...pl, tracks: pl.tracks.filter((t: any) => t.id !== trackId) }
-              : pl
-          )
-        );
-      }
-    } finally {
-      setTrackDeleting(null);
-    }
-  };
-
-  const handlePlayPreview = (trackId: string, previewUrl: string | null) => {
-    if (!previewUrl) {
-      alert("No preview available for this song");
-      return;
-    }
-    
-    if (playingTrackId === trackId && audio) {
-      audio.pause();
-      setPlayingTrackId(null);
-      setAudio(null);
-    } else {
-      if (audio) {
-        audio.pause();
-      }
-      const newAudio = new Audio(previewUrl);
-      newAudio.play();
-      newAudio.onended = () => {
-        setPlayingTrackId(null);
-        setAudio(null);
-      };
-      setPlayingTrackId(trackId);
-      setAudio(newAudio);
-    }
-  };
-
-  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      if (audio) {
-        audio.pause();
-        setAudio(null);
-      }
+      playingTrack?.audio.pause();
     };
-  }, [audio]);
+  }, [playingTrack]);
+
+  const handlePlayPreview = (track: any) => {
+    if (playingTrack?.id === track.id) {
+      playingTrack.audio.pause();
+      setPlayingTrack(null);
+    } else {
+      playingTrack?.audio.pause();
+      if (track.preview_url) {
+        const audio = new Audio(track.preview_url);
+        audio.play();
+        audio.onended = () => setPlayingTrack(null);
+        setPlayingTrack({ id: track.id, audio });
+      }
+    }
+  };
+
+  const handleDeleteTrack = async (playlistId: string, trackId: string) => {
+    setPlaylists(prev =>
+      prev.map(p =>
+        p.id === playlistId ? { ...p, tracks: p.tracks.filter((t: any) => t.id !== trackId) } : p
+      )
+    );
+    await fetch("/api/playlist/save/track", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dbPlaylistId: playlistId, trackId }),
+    });
+  };
+
+  const handleDeletePlaylist = async (playlistId: string) => {
+    if (!window.confirm("Are you sure you want to delete this entire playlist? This cannot be undone.")) return;
+    setPlaylists(prev => prev.filter(p => p.id !== playlistId));
+    await fetch("/api/playlist/save", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dbPlaylistId: playlistId }),
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-8 text-gray-900 dark:text-white text-center">Your Playlists</h1>
-      {loading ? (
-        <div className="text-center text-lg text-gray-500 dark:text-gray-400">Loading...</div>
-      ) : allPlaylists.length === 0 ? (
-        <p className="text-center text-gray-500 dark:text-gray-400">No playlists found.</p>
+    <div className="max-w-5xl mx-auto">
+      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-8 text-center">Your Playlists</h1>
+      {playlists.length === 0 ? (
+        <div className="text-center py-16 px-4 bg-card border rounded-lg">
+            <Music className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-lg font-semibold text-foreground">No playlists yet</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Go to the "Create Playlist" page to generate your first one!</p>
+        </div>
       ) : (
-        <div className="space-y-6">
-          {allPlaylists.map((pl) => (
-            <div key={pl.id} className="border border-gray-100 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-600 transition-all">
-              <div className="flex justify-between items-center px-6 py-4">
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-white">{pl.name}</span>
-                  {pl.user && (
-                    <span className="ml-2 text-gray-500 dark:text-gray-400 text-sm">by {pl.user.name || pl.user.email || pl.user.id}</span>
-                  )}
+        <div className="space-y-4">
+          {playlists.map((pl) => (
+            <div key={pl.id} className="bg-card border rounded-xl shadow-sm overflow-hidden transition-all">
+              <div className="flex justify-between items-center p-4">
+                <div className="truncate">
+                  <h3 className="font-semibold text-foreground truncate">{pl.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {pl.sentiment ? `Mood: ${pl.sentiment} · ` : ''}
+                    {pl.tracks.length} songs · Created {new Date(pl.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-shrink-0 ml-4">
                   {pl.spotifyPlaylistId && (
                     <a
                       href={`https://open.spotify.com/playlist/${pl.spotifyPlaylistId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-900 transition-colors text-sm"
+                      className="p-2 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                      aria-label="Open in Spotify"
                     >
-                      Open in Spotify
+                      <ExternalLink className="h-4 w-4" />
                     </a>
                   )}
                   <button
-                    className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-all text-sm"
+                    onClick={() => handleDeletePlaylist(pl.id)}
+                    className="p-2 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    aria-label="Delete playlist"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="p-2 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
                     onClick={() => setExpanded(expanded === pl.id ? null : pl.id)}
                   >
-                    {expanded === pl.id ? "Hide Songs" : "Show Songs"}
+                    <ChevronDown className={`h-5 w-5 transition-transform ${expanded === pl.id ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
               </div>
-              <div className="px-6 pb-2">
-                <div className="text-gray-600 dark:text-gray-400 text-sm">{pl.sentiment && `Mood: ${pl.sentiment}`}</div>
-                <div className="text-gray-400 dark:text-gray-500 text-xs">Created: {new Date(pl.createdAt).toLocaleString()}</div>
-              </div>
-              <div
-                className={`transition-all duration-300 ease-in-out overflow-y-scroll ${expanded === pl.id && pl.tracks && pl.tracks.length > 0 ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
-              >
-                {expanded === pl.id && pl.tracks && pl.tracks.length > 0 && (
-                  <div className="border-t border-gray-100 dark:border-gray-700 p-4">
-                    <div className="font-medium mb-3 text-gray-900 dark:text-white">Songs</div>
-                    <ul className="space-y-2">
-                      {pl.tracks.map((track: any, idx: number) => (
-                        <li key={track.id} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded transition-colors">
-                          <span className="flex items-center gap-2">
-                            <span className="text-gray-400 dark:text-gray-500 w-6">{idx + 1}.</span>
-                            <span className="text-gray-900 dark:text-white">{track.name}</span>
-                            <span className="text-gray-500 dark:text-gray-400 text-xs">({track.artists?.join(', ')})</span>
+              {expanded === pl.id && (
+                <div className="border-t">
+                  <ul className="divide-y">
+                    {pl.tracks.map((track: any, idx: number) => (
+                      <li key={track.id} className="flex items-center gap-4 p-3 group">
+                        <div className="flex items-center gap-4 flex-1 truncate">
+                          <span className="text-muted-foreground text-sm w-6 text-center">{idx + 1}</span>
+                          <button
+                            onClick={() => handlePlayPreview(track)}
+                            disabled={!track.preview_url}
+                            className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-muted/50 group-hover:bg-primary/10 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {playingTrack?.id === track.id ? <Pause className="h-4 w-4 text-primary" /> : <Play className="h-4 w-4 text-primary" />}
+                          </button>
+                          <div className="truncate">
+                            <p className="text-foreground font-medium truncate">{track.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">{track.artists?.join(', ')}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground text-sm font-mono hidden sm:block">
+                            {Math.floor(track.duration / 60000)}:{String(Math.floor((track.duration % 60000) / 1000)).padStart(2, '0')}
                           </span>
-                          <span className="flex items-center gap-3">
-                            <span className="text-gray-400 dark:text-gray-500 text-xs font-mono">
-                              {Math.floor(track.duration / 60000)}:{String(Math.floor((track.duration % 60000) / 1000)).padStart(2, '0')}
-                            </span>
-                            <button
-                              className={`ml-2 ${track.preview_url ? 'bg-gray-900 hover:bg-black dark:bg-gray-700 dark:hover:bg-gray-600' : 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'} text-white px-2 py-1 rounded transition-colors text-sm`}
-                              onClick={() => handlePlayPreview(track.id, track.preview_url)}
-                              disabled={!track.preview_url}
-                            >
-                              <span role="img" aria-label="Play">
-                                {playingTrackId === track.id ? '⏸️' : '▶️'}
-                              </span>
-                              {playingTrackId === track.id ? 'Stop' : 'Play'}
-                            </button>
-                            <button
-                              className="ml-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-2 py-1 rounded border border-red-200 dark:border-red-500/30 hover:border-red-300 dark:hover:border-red-500/50 transition-colors disabled:opacity-60 text-sm"
-                              disabled={trackDeleting === track.id}
-                              onClick={() => handleDeleteTrack(pl.id, track.id)}
-                            >
-                              <span role="img" aria-label="Delete">🗑️</span>
-                              {trackDeleting === track.id ? "Deleting..." : "Delete"}
-                            </button>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+                          <button
+                            onClick={() => handleDeleteTrack(pl.id, track.id)}
+                            className="p-2 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
     </div>
   );
-} 
+}

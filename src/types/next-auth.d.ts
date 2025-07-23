@@ -22,4 +22,4 @@ declare module "next-auth/jwt" {
     accessTokenExpires?: number;
     error?: string;
   }
-} 
+}

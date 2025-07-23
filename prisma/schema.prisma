@@ -63,4 +63,4 @@ model SongPreference {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
-} 
+}

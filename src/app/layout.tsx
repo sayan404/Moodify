@@ -6,7 +6,7 @@ import { ThemeProvider } from "../components/providers/ThemeProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Sentiment-Aware Playlist Generator",
+  title: "Moodify - AI Playlist Generator",
   description: "Create AI-powered playlists based on your mood",
 };
 
@@ -16,13 +16,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100`}>
-        <NextAuthProvider>
-          <ThemeProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased`}>
+        <ThemeProvider
+          storageKey="moodify-theme"
+        >
+          <NextAuthProvider>
             {children}
-          </ThemeProvider>
-        </NextAuthProvider>
+          </NextAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
