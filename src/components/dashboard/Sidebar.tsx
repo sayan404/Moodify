@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "../providers/ThemeProvider";
-import { Home, PlusCircle, Music, Moon, Sun, X, Music4, Coffee, LogOut } from "lucide-react";
+import { Home, PlusCircle, Music, Moon, Sun, X, Music4, Coffee, LogOut, Mail, Github } from "lucide-react";
 import { Fragment } from "react";
 
 interface SidebarProps {
@@ -95,6 +95,24 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
             >
               <Coffee className="h-5 w-5" />
               <span>Buy Me a Coffee</span>
+            </a>
+            <a
+              href="mailto:sayanmajumder0002@gmail.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group -mx-2 flex w-full items-center gap-x-3 rounded-md p-3 text-sm font-semibold leading-6 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              <Mail className="h-5 w-5" />
+              <span>Contact via Email</span>
+            </a>
+            <a
+              href="https://github.com/sayan404"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group -mx-2 flex w-full items-center gap-x-3 rounded-md p-3 text-sm font-semibold leading-6 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              <Github className="h-5 w-5" />
+              <span>GitHub Profile</span>
             </a>
             <button
               onClick={handleLogout}
