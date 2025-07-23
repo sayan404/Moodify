@@ -19,8 +19,8 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { moodText, description, mood, numSongs } = body;
-  console.log("[AI-Playlist] User input:", { moodText, description, mood, numSongs });
+  const { moodText, description, mood, numSongs, songLanguage, timeline, singer, genre, energy, tempo } = body;
+  console.log("[AI-Playlist] User input:", { moodText, description, mood, numSongs, songLanguage, timeline, singer, genre, energy, tempo });
   if (!moodText) {
     console.log("[AI-Playlist] No mood text provided");
     return NextResponse.json({ error: "Mood text is required" }, { status: 400 });
@@ -28,26 +28,62 @@ export async function POST(request: Request) {
 
   // 1. Call Gemini Flash for analysis
   const geminiPrompt = `
-    Analyze the following user input and extract:
-    - mood (e.g. happy, sad, energetic, nostalgic, etc.)
-    - genre (e.g. pop, bollywood, rock, etc.)
-    - era/decade (e.g. 90s, 2000s, etc.)
-    - theme (e.g. love, party, workout, etc.)
-    - up to ${numSongs || 5} song suggestions (title and artist, preferably with Spotify popularity)
-    User input: "${moodText}"
-    ${mood ? `Explicit mood: ${mood}` : ""}
-    ${description ? `Playlist description: ${description}` : ""}
+    You are a music expert specializing in creating personalized playlists. Analyze the following user preferences and suggest songs that STRICTLY match their criteria.
+
+    User Input: "${moodText}"
+    ${mood ? `Mood: ${mood}` : ""}
+    ${description ? `Description: ${description}` : ""}
+    ${songLanguage ? `Language: ${songLanguage}` : ""}
+    ${timeline ? `Era/Timeline: ${timeline}` : ""}
+    ${singer ? `Preferred Artist: ${singer}` : ""}
+    ${genre ? `Genre: ${genre}` : ""}
+    ${energy ? `Energy Level: ${energy}` : ""}
+    ${tempo ? `Tempo: ${tempo}` : ""}
+    Number of songs requested: ${numSongs || 5}
+
+    Requirements:
+    1. If a specific language is provided (e.g., Hindi, Bengali, Telugu), ONLY suggest songs in that language
+    2. If a timeline/era is specified (e.g., 90s, 2000s), ONLY suggest songs from that period
+    3. If a specific artist is mentioned, prioritize their songs that match other criteria
+    4. If a genre is specified, ONLY suggest songs from that genre or closely related genres
+    5. Match the requested energy level (if provided) - high energy for energetic/upbeat, low energy for calm/relaxed
+    6. Match the requested tempo (if provided) - consider BPM and rhythm style
+    7. Consider the mood and theme from the user's description for song selection
+    8. Ensure suggested songs are likely to be available on Spotify
+
+    Analyze and provide:
+    - Primary mood (e.g., happy, sad, energetic, nostalgic)
+    - Dominant genre (e.g., pop, bollywood, rock, classical)
+    - Target era/decade based on input or mood
+    - Main theme (e.g., love, party, workout, meditation)
+    - Energy level classification
+    - Tempo classification
+    - ${numSongs || 5} highly relevant song suggestions
+
     Respond as JSON:
     {
       "mood": "...",
       "genre": "...",
       "era": "...",
       "theme": "...",
+      "language": "...",
+      "energy_level": "...",
+      "tempo": "...",
       "suggested_songs": [
-        {"title": "...", "artist": "..."},
-        ...
+        {
+          "title": "...",
+          "artist": "...",
+          "year": "...",
+          "language": "...",
+          "genre": "...",
+          "energy": "...",
+          "tempo": "...",
+          "relevance_reason": "Brief explanation of why this song matches the user's criteria"
+        }
       ]
     }
+
+    Note: Each suggested song MUST align with ALL specified preferences (language, era, artist, genre, energy, tempo). Do not suggest songs that don't match these criteria.
   `;
   console.log("[AI-Playlist] Gemini prompt:", geminiPrompt);
 

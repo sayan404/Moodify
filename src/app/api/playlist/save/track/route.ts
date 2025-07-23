@@ -28,4 +28,4 @@ export async function DELETE(request: Request) {
     console.error("[Delete-Track] Error deleting track:", error);
     return NextResponse.json({ error: "Failed to delete track" }, { status: 500 });
   }
-} 
+}

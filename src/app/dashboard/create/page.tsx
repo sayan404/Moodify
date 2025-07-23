@@ -2,13 +2,17 @@
 import { useState } from "react";
 import MoodInput from "../../../components/playlist/MoodInput";
 import PlaylistDisplay from "../../../components/playlist/PlaylistDisplay";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function CreatePlaylistPage() {
   const [generatedPlaylist, setGeneratedPlaylist] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleMoodSubmit = async (data: { moodText: string; description: string; mood: string; numSongs: number }) => {
     setIsLoading(true);
+    setError(null);
+    setGeneratedPlaylist(null);
     try {
       const response = await fetch("/api/playlist/generate", {
         method: "POST",
@@ -18,51 +22,56 @@ export default function CreatePlaylistPage() {
         body: JSON.stringify(data),
       });
 
+      const resData = await response.json();
       if (!response.ok) {
-        throw new Error("Failed to generate playlist");
+        throw new Error(resData.error || "Failed to generate playlist");
       }
 
-      const resData = await response.json();
       setGeneratedPlaylist(resData.playlist);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating playlist:", error);
+      setError(error.message || "An unexpected error occurred.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-2rem)] py-2">
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Your Mood-Based Playlist Generator
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-[10px] max-w-2xl mx-auto ">
-            Let AI create the perfect playlist based on your current mood, whether you're feeling energetic, relaxed, or anything in between.
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 mb-8">
-          <MoodInput onSubmit={handleMoodSubmit} isLoading={isLoading} />
-        </div>
-
-        {generatedPlaylist && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 animate-fadeIn">
-            <PlaylistDisplay playlist={generatedPlaylist} />
-          </div>
-        )}
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-8 text-center">
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-4xl mb-2">
+          Create a New Playlist
+        </h1>
+        <p className="text-muted-foreground max-w-2xl mx-auto text-sm">
+          Describe your mood or the vibe you're looking for, and let our AI craft the perfect playlist for you.
+        </p>
       </div>
 
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out forwards;
-        }
-      `}</style>
+      <MoodInput onSubmit={handleMoodSubmit} isLoading={isLoading} />
+
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="mt-8 text-center bg-destructive/10 text-destructive p-4 rounded-md"
+          >
+            <p>{error}</p>
+          </motion.div>
+        )}
+
+        {generatedPlaylist && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mt-8"
+          >
+            <PlaylistDisplay playlist={generatedPlaylist} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-} 
+}
