@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Check, Copy, Loader2, Music, Play, Pause, Trash2, ExternalLink } from "lucide-react";
 import { FaSpotify } from "react-icons/fa";
+import MusicPlayer from "./MusicPlayer";
 
 interface Track {
   id: string;
@@ -32,7 +33,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [selectedTrackUrl, setSelectedTrackUrl] = useState<string | null>(null);
 
   useEffect(() => {
     setPlaylist(initialPlaylist);
@@ -50,31 +51,20 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   };
 
   const handlePlayPreview = (track: Track) => {
+    console.log("track from playlist display", track);
     if (!track.preview_url) {
       showToast('No preview available for this song', 'error');
       return;
     }
     
-    if (playingTrackId === track.id && audio) {
-      audio.pause();
+    if (playingTrackId === track.id) {
       setPlayingTrackId(null);
+      setSelectedTrackUrl(null);
     } else {
-      if (audio) audio.pause();
-      const newAudio = new Audio(track.preview_url);
-      setAudio(newAudio);
-      newAudio.play();
-      newAudio.onended = () => setPlayingTrackId(null);
       setPlayingTrackId(track.id);
+      setSelectedTrackUrl(track.preview_url);
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (audio) {
-        audio.pause();
-      }
-    };
-  }, [audio]);
 
   const handleSaveToSpotify = async () => {
     setSaving(true);
@@ -122,6 +112,12 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
           toast.type === 'success' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'
         }`}>
           {toast.message}
+        </div>
+      )}
+
+      {selectedTrackUrl && (
+        <div className="mb-6">
+          <MusicPlayer trackUrl={selectedTrackUrl} />
         </div>
       )}
 
