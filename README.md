@@ -1,141 +1,107 @@
 # Moodify - AI-Powered Playlist Generator
 
-Moodify is a modern web application that creates personalized Spotify playlists based on your mood using AI. Simply describe how you're feeling, and let our AI create the perfect playlist for you.
+Moodify is an intelligent playlist generator that creates personalized Spotify playlists based on your mood and vibe descriptions. Using AI, it understands your musical preferences and crafts the perfect soundtrack for any moment.
 
-![Moodify Dark Mode](screenshot-dark.png)
+## Features
 
-## ✨ Features
+- 🎵 AI-powered playlist generation
+- 🎨 Beautiful, responsive UI with dark mode support
+- 🔒 Secure Spotify authentication
+- 🎧 Built-in music player with visualizations
+- 💾 Save playlists directly to your Spotify account
+- 📱 Mobile-friendly design
 
-- **🎯 Mood-Based Generation**: Create playlists based on your current mood or desired vibe
-- **🤖 AI-Powered**: Uses Google's Gemini AI to understand your mood and suggest appropriate songs
-- **🎨 Dark/Light Mode**: Beautiful, responsive UI with automatic dark mode support
-- **🔄 Spotify Integration**: Seamlessly saves playlists to your Spotify account
-- **📱 Responsive Design**: Works perfectly on desktop and mobile devices
-- **🎵 Preview Songs**: Listen to song previews before saving the playlist
-- **🎨 Customization**: Control playlist length and add custom descriptions
+## Screenshots
 
-## 🚀 Tech Stack
+### Login Page
+![Login Page](login-page.png)
+*Welcome screen with animated audio wave visualization*
 
-- **Frontend**: Next.js 13+ (App Router), React, TypeScript
-- **Styling**: Tailwind CSS
+### Dashboard
+![Dashboard Dark Mode](screenshot-dark.png)
+*Create playlist page with mood input and advanced options*
+
+## Tech Stack
+
+- **Frontend**: Next.js 13, React, TypeScript, TailwindCSS
 - **Authentication**: NextAuth.js with Spotify OAuth
 - **Database**: PostgreSQL with Prisma ORM
-- **AI**: Google Gemini API
-- **API**: Spotify Web API
-- **Hosting**: Vercel
+- **AI Integration**: Google's Gemini AI
+- **APIs**: Spotify Web API, Web Playback SDK
 
-## 📦 Installation
+## Getting Started
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/moodify.git
-   cd moodify
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   Create a `.env` file in the root directory with:
-   ```env
-   # Spotify API
-   SPOTIFY_CLIENT_ID=your_spotify_client_id
-   SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-
-   # NextAuth
-   NEXTAUTH_SECRET=your_nextauth_secret
-   NEXTAUTH_URL=http://localhost:3000
-
-   # Database
-   DATABASE_URL=your_postgresql_url
-
-   # Gemini AI
-   GEMINI_API_KEY=your_gemini_api_key
-   ```
-
-4. **Set up the database**
-   ```bash
-   npx prisma migrate dev
-   ```
-
-5. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-## 💻 Usage
-
-1. **Login with Spotify**
-   - Click "Login with Spotify" to authenticate
-   - Grant necessary permissions for playlist creation
-
-2. **Create a Playlist**
-   - Describe your current mood or desired vibe
-   - Add optional details like description and number of songs
-   - Click "Create Playlist" to generate
-
-3. **Customize & Save**
-   - Preview the generated songs
-   - Remove any songs you don't like
-   - Save the playlist to your Spotify account
-
-4. **Manage Playlists**
-   - View all your generated playlists
-   - Open them directly in Spotify
-   - Delete individual songs or entire playlists
-
-## 🔑 Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `SPOTIFY_CLIENT_ID` | Your Spotify application client ID |
-| `SPOTIFY_CLIENT_SECRET` | Your Spotify application client secret |
-| `NEXTAUTH_SECRET` | Random string for session encryption |
-| `NEXTAUTH_URL` | Your application's base URL |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `GEMINI_API_KEY` | Google Gemini API key |
-
-## 📁 Project Structure
-
-```
-moodify/
-├── src/
-│   ├── app/                 # Next.js app router pages
-│   ├── components/          # React components
-│   ├── prisma/             # Database schema and migrations
-│   └── types/              # TypeScript type definitions
-├── public/                 # Static assets
-└── package.json           # Project dependencies
+1. Clone the repository
+```bash
+git clone https://github.com/sayan404/moodify.git
+cd moodify
 ```
 
-## 🛠️ Development
+2. Install dependencies
+```bash
+npm install
+```
 
-- **Code Style**: Uses ESLint and Prettier
-- **Type Safety**: Full TypeScript support
-- **Database**: Prisma for type-safe database access
-- **API Routes**: Next.js API routes with proper error handling
-- **State Management**: React hooks for local state
-- **Authentication**: NextAuth.js with JWT strategy
+3. Set up environment variables
+```env
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
+DATABASE_URL=your_postgresql_database_url
+GEMINI_API_KEY=your_gemini_api_key
+```
 
-## 🤝 Contributing
+4. Run database migrations
+```bash
+npx prisma migrate dev
+```
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+5. Start the development server
+```bash
+npm run dev
+```
 
-## 📄 License
+## Features in Detail
+
+### AI Playlist Generation
+- Natural language mood descriptions
+- Genre awareness
+- Tempo and energy matching
+- Smart song selection
+
+### Spotify Integration
+- Full playlist management
+- Real-time playback
+- Save to your library
+- Premium features support
+
+### User Experience
+- Animated audio visualizations
+- Responsive design
+- Dark/Light mode
+- Intuitive interface
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Support
+
+If you like this project, consider [buying me a coffee](https://coff.ee/sayan404) ☕
+
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Author
 
-- [Spotify Web API](https://developer.spotify.com/documentation/web-api/)
-- [Google Gemini AI](https://deepmind.google/technologies/gemini/)
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [NextAuth.js](https://next-auth.js.org/)
-- [Prisma](https://www.prisma.io/)
+- **Sayan Majumder**
+- GitHub: [@sayan404](https://github.com/sayan404)
+- LinkedIn: [Sayan404](https://linkedin.com/in/sayan404)
+
+---
+
+<div align="center">
+Made with ❤️ by Sayan Majumder
+</div>
