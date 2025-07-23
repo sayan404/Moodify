@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTheme } from "../providers/ThemeProvider";
-import { Home, PlusCircle, Music, Moon, Sun, X, Music4 } from "lucide-react";
+import { Home, PlusCircle, Music, Moon, Sun, X, Music4, Coffee } from "lucide-react";
 import { Fragment } from "react";
 
 interface SidebarProps {
@@ -56,7 +56,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
               ))}
             </ul>
           </li>
-          <li className="mt-auto">
+          <li className="mt-auto space-y-2">
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="group -mx-2 flex w-full gap-x-3 rounded-md p-3 text-sm font-semibold leading-6 text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -64,6 +64,15 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
             </button>
+            <a
+              href="https://coff.ee/sayan404"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group -mx-2 flex w-full items-center gap-x-3 rounded-md p-3 text-sm font-semibold leading-6 text-muted-foreground hover:bg-[#FFDD00] hover:text-black transition-colors"
+            >
+              <Coffee className="h-5 w-5" />
+              <span>Buy Me a Coffee</span>
+            </a>
           </li>
         </ul>
       </nav>
