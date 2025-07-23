@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Check, Copy, Loader2, Music, Play, Pause, Trash2, ExternalLink } from "lucide-react";
 import { FaSpotify } from "react-icons/fa";
-import MusicPlayer from "./MusicPlayer";
+import SpotifyPlayer from "./SpotifyPlayer";
 
 interface Track {
   id: string;
@@ -12,6 +12,7 @@ interface Track {
   albumName: string;
   duration: number;
   preview_url?: string;
+  uri: string;
 }
 
 interface Playlist {
@@ -32,8 +33,7 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
-  const [selectedTrackUrl, setSelectedTrackUrl] = useState<string | null>(null);
+  const [selectedTrackUri, setSelectedTrackUri] = useState<string | null>(null);
 
   useEffect(() => {
     setPlaylist(initialPlaylist);
@@ -50,19 +50,11 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handlePlayPreview = (track: Track) => {
-    console.log("track from playlist display", track);
-    if (!track.preview_url) {
-      showToast('No preview available for this song', 'error');
-      return;
-    }
-    
-    if (playingTrackId === track.id) {
-      setPlayingTrackId(null);
-      setSelectedTrackUrl(null);
+  const handlePlayTrack = (track: Track) => {
+    if (selectedTrackUri === track.uri) {
+      setSelectedTrackUri(null);
     } else {
-      setPlayingTrackId(track.id);
-      setSelectedTrackUrl(track.preview_url);
+      setSelectedTrackUri(track.uri);
     }
   };
 
@@ -115,9 +107,9 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
         </div>
       )}
 
-      {selectedTrackUrl && (
+      {selectedTrackUri && (
         <div className="mb-6">
-          <MusicPlayer trackUrl={selectedTrackUrl} />
+          <SpotifyPlayer trackUri={selectedTrackUri} />
         </div>
       )}
 
@@ -157,11 +149,10 @@ export default function PlaylistDisplay({ playlist: initialPlaylist }: PlaylistD
             <div className="flex items-center gap-4 flex-1 truncate">
               <span className="text-muted-foreground text-sm w-6 text-center">{index + 1}</span>
               <button
-                onClick={() => handlePlayPreview(track)}
-                disabled={!track.preview_url}
-                className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-muted/50 group-hover:bg-primary/10 disabled:cursor-not-allowed transition-colors"
+                onClick={() => handlePlayTrack(track)}
+                className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-muted/50 group-hover:bg-primary/10 transition-colors"
               >
-                {playingTrackId === track.id ? <Pause className="h-5 w-5 text-primary" /> : <Play className="h-5 w-5 text-primary" />}
+                {selectedTrackUri === track.uri ? <Pause className="h-5 w-5 text-primary" /> : <Play className="h-5 w-5 text-primary" />}
               </button>
               <div className="truncate">
                 <p className="text-foreground font-semibold truncate">{track.name}</p>

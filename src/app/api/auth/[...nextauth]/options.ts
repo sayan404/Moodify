@@ -9,6 +9,9 @@ const SPOTIFY_SCOPES = [
   "playlist-modify-public",
   "playlist-modify-private",
   "user-library-read",
+  "streaming",
+  "user-read-playback-state",
+  "user-modify-playback-state"
 ].join(" ");
 
 if (!process.env.SPOTIFY_CLIENT_ID) {
