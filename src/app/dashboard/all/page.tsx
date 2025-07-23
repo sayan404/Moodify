@@ -125,23 +125,23 @@ export default function AllPlaylistsPage() {
   const currentTrackUri = getCurrentTrackUri();
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="relative">
       <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-4xl mb-8 text-center">Your Playlists</h1>
 
       {currentTrackUri && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm p-4 border-b shadow-lg">
-          <div className="max-w-5xl mx-auto">
+        <div className="sticky top-0 z-50 -mx-4 sm:-mx-6 lg:-mx-8 bg-background/95 backdrop-blur-sm shadow-lg">
+          <div className="max-w-5xl mx-auto p-4">
             <SpotifyPlayer trackUri={currentTrackUri} />
           </div>
         </div>
       )}
 
-      <div className={currentTrackUri ? "mt-32" : ""}>
+      <div className={currentTrackUri ? "pt-4" : ""}>
         {playlists.length === 0 ? (
           <div className="text-center py-16 px-4 bg-card border rounded-lg">
-              <Music className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-2 text-lg font-semibold text-foreground">No playlists yet</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Go to the "Create Playlist" page to generate your first one!</p>
+            <Music className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-lg font-semibold text-foreground">No playlists yet</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Go to the "Create Playlist" page to generate your first one!</p>
           </div>
         ) : (
           <div className="space-y-4">
