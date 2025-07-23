@@ -21,6 +21,19 @@ const SpotifyPlayer = ({ trackUri }: SpotifyPlayerProps) => {
   const [player, setPlayer] = useState<any>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
 
+  // Set up the callback before loading the script
+  useEffect(() => {
+    console.log('[SpotifyPlayer] Setting up SDK callback');
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      console.log('[SpotifyPlayer] SDK ready');
+      setIsSDKReady(true);
+    };
+
+    return () => {
+      window.onSpotifyWebPlaybackSDKReady = () => {};
+    };
+  }, []);
+
   useEffect(() => {
     console.log('[SpotifyPlayer] Session status:', status);
     console.log('[SpotifyPlayer] Session data:', session);
@@ -128,18 +141,13 @@ const SpotifyPlayer = ({ trackUri }: SpotifyPlayerProps) => {
     play();
   }, [trackUri, player, session?.accessToken]);
 
-  // Always render the embedded player for better compatibility
   return (
     <>
       <Script
         src="https://sdk.scdn.co/spotify-player.js"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         onLoad={() => {
           console.log('[SpotifyPlayer] SDK script loaded');
-          window.onSpotifyWebPlaybackSDKReady = () => {
-            console.log('[SpotifyPlayer] SDK ready');
-            setIsSDKReady(true);
-          };
         }}
       />
       <div className="w-full max-w-2xl mx-auto p-4 bg-gray-800 rounded-lg shadow-lg">
