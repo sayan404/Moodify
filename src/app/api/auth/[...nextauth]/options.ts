@@ -82,13 +82,16 @@ export const options: NextAuthOptions = {
       // If token has expired, try to refresh it
       if (token.refreshToken) {
         try {
+          console.log('Attempting to refresh token...');
+          const basic = Buffer.from(
+            `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+          ).toString('base64');
+          
           const response = await fetch("https://accounts.spotify.com/api/token", {
             method: "POST",
             headers: {
               "Content-Type": "application/x-www-form-urlencoded",
-              Authorization: `Basic ${Buffer.from(
-                `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
-              ).toString("base64")}`,
+              Authorization: `Basic ${basic}`,
             },
             body: new URLSearchParams({
               grant_type: "refresh_token",
@@ -98,8 +101,16 @@ export const options: NextAuthOptions = {
 
           const tokens = await response.json();
 
-          if (!response.ok) throw tokens;
+          if (!response.ok) {
+            console.error('Token refresh failed:', {
+              status: response.status,
+              statusText: response.statusText,
+              error: tokens
+            });
+            throw tokens;
+          }
 
+          console.log('Token refresh successful');
           return {
             ...token,
             accessToken: tokens.access_token,
@@ -107,7 +118,11 @@ export const options: NextAuthOptions = {
             refreshToken: tokens.refresh_token ?? token.refreshToken,
           };
         } catch (error) {
-          console.error("Error refreshing access token", error);
+          console.error("Error refreshing access token", {
+            error,
+            clientIdExists: !!process.env.SPOTIFY_CLIENT_ID,
+            clientSecretExists: !!process.env.SPOTIFY_CLIENT_SECRET
+          });
           return { ...token, error: "RefreshAccessTokenError" };
         }
       }
