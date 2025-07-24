@@ -14,6 +14,14 @@ const SPOTIFY_SCOPES = [
   "user-modify-playback-state"
 ].join(" ");
 
+// Debug logging for environment variables
+console.log('Auth Configuration:', {
+  hasClientId: !!process.env.SPOTIFY_CLIENT_ID,
+  hasClientSecret: !!process.env.SPOTIFY_CLIENT_SECRET,
+  hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
+  scopes: SPOTIFY_SCOPES,
+});
+
 if (!process.env.SPOTIFY_CLIENT_ID) {
   throw new Error("Missing SPOTIFY_CLIENT_ID");
 }
@@ -32,7 +40,9 @@ export const options: NextAuthOptions = {
       clientId: process.env.SPOTIFY_CLIENT_ID,
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
       authorization: {
-        params: { scope: SPOTIFY_SCOPES },
+        params: { 
+          scope: SPOTIFY_SCOPES,
+        },
       },
     }),
   ],
@@ -43,32 +53,72 @@ export const options: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log('SignIn Callback Started:', {
+        userId: user?.id,
+        email: user?.email,
+        hasAccount: !!account,
+        hasProfile: !!profile,
+        timestamp: new Date().toISOString()
+      });
+
       if (!account || !profile) {
+        console.error('SignIn Failed: Missing account or profile', {
+          hasAccount: !!account,
+          hasProfile: !!profile
+        });
         return false;
       }
-      // Upsert user in DB
-      const prisma = new PrismaClient();
-      await prisma.user.upsert({
-        where: { id: account.providerAccountId },
-        update: {
-          email: user.email,
-          name: user.name,
-          accessToken: account.access_token,
-          refreshToken: account.refresh_token,
-        },
-        create: {
-          id: account.providerAccountId,
-          email: user.email ?? "",
-          name: user.name ?? null,
-          accessToken: account.access_token ?? "",
-          refreshToken: account.refresh_token ?? "",
-          spotifyId: account.providerAccountId,
-        },
-      });
-      return true;
+
+      try {
+        // Upsert user in DB
+        const prisma = new PrismaClient();
+        const result = await prisma.user.upsert({
+          where: { id: account.providerAccountId },
+          update: {
+            email: user.email,
+            name: user.name,
+            accessToken: account.access_token,
+            refreshToken: account.refresh_token,
+          },
+          create: {
+            id: account.providerAccountId,
+            email: user.email ?? "",
+            name: user.name ?? null,
+            accessToken: account.access_token ?? "",
+            refreshToken: account.refresh_token ?? "",
+            spotifyId: account.providerAccountId,
+          },
+        });
+        console.log('User Upserted Successfully:', {
+          userId: result.id,
+          email: result.email,
+          timestamp: new Date().toISOString()
+        });
+        return true;
+      } catch (error) {
+        console.error('Database Operation Failed:', {
+          error,
+          userId: account.providerAccountId,
+          timestamp: new Date().toISOString()
+        });
+        return false;
+      }
     },
     async jwt({ token, account }) {
+      console.log('JWT Callback Started:', {
+        hasToken: !!token,
+        hasAccount: !!account,
+        timestamp: new Date().toISOString()
+      });
+
       if (account) {
+        console.log('New Account Details:', {
+          hasAccessToken: !!account.access_token,
+          hasRefreshToken: !!account.refresh_token,
+          expiresIn: account.expires_in,
+          timestamp: new Date().toISOString()
+        });
+
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.accessTokenExpires = Date.now() + (account.expires_in as number) * 1000;
@@ -76,13 +126,20 @@ export const options: NextAuthOptions = {
 
       // If token has not expired, return it
       if (token.accessTokenExpires && Date.now() < token.accessTokenExpires) {
+        console.log('Using Existing Token:', {
+          expiresIn: Math.floor((token.accessTokenExpires - Date.now()) / 1000),
+          timestamp: new Date().toISOString()
+        });
         return token;
       }
 
       // If token has expired, try to refresh it
       if (token.refreshToken) {
         try {
-          console.log('Attempting to refresh token...');
+          console.log('Attempting Token Refresh:', {
+            timestamp: new Date().toISOString()
+          });
+
           const basic = Buffer.from(
             `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
           ).toString('base64');
@@ -102,15 +159,22 @@ export const options: NextAuthOptions = {
           const tokens = await response.json();
 
           if (!response.ok) {
-            console.error('Token refresh failed:', {
+            console.error('Token Refresh Failed:', {
               status: response.status,
               statusText: response.statusText,
-              error: tokens
+              error: tokens,
+              timestamp: new Date().toISOString()
             });
             throw tokens;
           }
 
-          console.log('Token refresh successful');
+          console.log('Token Refresh Successful:', {
+            hasNewAccessToken: !!tokens.access_token,
+            hasNewRefreshToken: !!tokens.refresh_token,
+            expiresIn: tokens.expires_in,
+            timestamp: new Date().toISOString()
+          });
+
           return {
             ...token,
             accessToken: tokens.access_token,
@@ -118,10 +182,11 @@ export const options: NextAuthOptions = {
             refreshToken: tokens.refresh_token ?? token.refreshToken,
           };
         } catch (error) {
-          console.error("Error refreshing access token", {
+          console.error("Token Refresh Error:", {
             error,
             clientIdExists: !!process.env.SPOTIFY_CLIENT_ID,
-            clientSecretExists: !!process.env.SPOTIFY_CLIENT_SECRET
+            clientSecretExists: !!process.env.SPOTIFY_CLIENT_SECRET,
+            timestamp: new Date().toISOString()
           });
           return { ...token, error: "RefreshAccessTokenError" };
         }
@@ -130,6 +195,13 @@ export const options: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      console.log('Session Callback:', {
+        hasAccessToken: !!token.accessToken,
+        hasError: !!token.error,
+        userId: token.sub,
+        timestamp: new Date().toISOString()
+      });
+
       if (token.accessToken) {
         session.accessToken = token.accessToken as string;
         if (token.error) {
@@ -146,4 +218,5 @@ export const options: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+  debug: true, // Enable debug messages from NextAuth
 };
