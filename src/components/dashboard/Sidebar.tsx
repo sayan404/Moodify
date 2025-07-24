@@ -20,22 +20,10 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
 
   const handleLogout = async () => {
     try {
-      // Revoke Spotify token
-      if (session?.accessToken) {
-        await fetch('https://accounts.spotify.com/api/token/revoke', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: `token=${session.accessToken}`,
-        });
-      }
-      
-      // Sign out from NextAuth
       await signOut({ redirect: true, callbackUrl: '/login' });
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still sign out even if token revocation fails
+      // Retry sign out if it fails
       await signOut({ redirect: true, callbackUrl: '/login' });
     }
   };
