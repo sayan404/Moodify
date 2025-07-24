@@ -18,15 +18,15 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
 
-  const handleLogout = async () => {
-    try {
-      await signOut({ redirect: true, callbackUrl: '/login' });
-    } catch (error) {
-      console.error('Error during logout:', error);
-      // Retry sign out if it fails
-      await signOut({ redirect: true, callbackUrl: '/login' });
-    }
-  };
+  // const handleLogout = async () => {
+  //   try {
+  //     await signOut({ redirect: true, callbackUrl: '/login' });
+  //   } catch (error) {
+  //     console.error('Error during logout:', error);
+  //     // Retry sign out if it fails
+  //     await signOut({ redirect: true, callbackUrl: '/login' });
+  //   }
+  // };
 
   const navigation = [
     { name: "Create Playlist", href: "/dashboard/create", icon: PlusCircle },
@@ -102,13 +102,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
               <Github className="h-5 w-5" />
               <span>GitHub Profile</span>
             </a>
-            <button
+            {/* <button
               onClick={handleLogout}
               className="group -mx-2 flex w-full items-center gap-x-3 rounded-md p-3 text-sm font-semibold leading-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
               <LogOut className="h-5 w-5" />
               <span>Logout</span>
-            </button>
+            </button> */}
           </li>
         </ul>
       </nav>
