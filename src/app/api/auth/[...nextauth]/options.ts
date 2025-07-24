@@ -45,7 +45,11 @@ export const options: NextAuthOptions = {
           scope: SPOTIFY_SCOPES,
         },
       },
+      token: {
+        url: 'https://accounts.spotify.com/api/token',
+      },
       userinfo: {
+        url: 'https://api.spotify.com/v1/me',
         async request({ tokens, client, provider }) {
           console.log('Attempting to fetch user info:', {
             hasAccessToken: !!tokens.access_token,
@@ -109,13 +113,15 @@ export const options: NextAuthOptions = {
         email: user?.email,
         hasAccount: !!account,
         hasProfile: !!profile,
+        providerType: account?.provider,
         timestamp: new Date().toISOString()
       });
 
       if (!account || !profile) {
         console.error('SignIn Failed: Missing account or profile', {
           hasAccount: !!account,
-          hasProfile: !!profile
+          hasProfile: !!profile,
+          provider: account?.provider
         });
         return false;
       }
