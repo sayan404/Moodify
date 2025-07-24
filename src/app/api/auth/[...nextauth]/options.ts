@@ -44,6 +44,56 @@ export const options: NextAuthOptions = {
           scope: SPOTIFY_SCOPES,
         },
       },
+      userinfo: {
+        async request({ tokens, client, provider }) {
+          console.log('Attempting to fetch user info:', {
+            hasAccessToken: !!tokens.access_token,
+            tokenType: typeof tokens.access_token,
+            timestamp: new Date().toISOString()
+          });
+          
+          try {
+            const response = await fetch('https://api.spotify.com/v1/me', {
+              headers: {
+                Authorization: `Bearer ${tokens.access_token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            console.log('Userinfo Response:', {
+              status: response.status,
+              statusText: response.statusText,
+              headers: Object.fromEntries(response.headers.entries()),
+              timestamp: new Date().toISOString()
+            });
+
+            if (!response.ok) {
+              const error = await response.json();
+              console.error('Userinfo Error:', {
+                status: response.status,
+                error,
+                timestamp: new Date().toISOString()
+              });
+              throw error;
+            }
+
+            const profile = await response.json();
+            console.log('Profile fetched successfully:', {
+              id: profile.id,
+              email: profile.email,
+              timestamp: new Date().toISOString()
+            });
+            
+            return profile;
+          } catch (error) {
+            console.error('Userinfo Request Failed:', {
+              error,
+              timestamp: new Date().toISOString()
+            });
+            throw error;
+          }
+        }
+      }
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
