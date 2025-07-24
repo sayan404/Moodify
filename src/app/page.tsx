@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import EarlyAccessForm from "../components/EarlyAccessForm";
 
 export default function Home() {
-  redirect("/dashboard");
+  return <EarlyAccessForm />;
 }

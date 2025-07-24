@@ -123,7 +123,7 @@ export const options: NextAuthOptions = {
           hasProfile: !!profile,
           provider: account?.provider
         });
-        return false;
+        throw new Error('Please make sure you are using the same email address that is whitelisted in the Spotify Developer Dashboard. If this error persists, please contact support.');
       }
 
       try {
@@ -158,7 +158,10 @@ export const options: NextAuthOptions = {
           userId: account.providerAccountId,
           timestamp: new Date().toISOString()
         });
-        return false;
+        if (error.message?.includes('403')) {
+          throw new Error('Access denied. Your email address may not be whitelisted in our Spotify Developer Dashboard. Please contact support if you believe this is an error.');
+        }
+        throw error;
       }
     },
     async jwt({ token, account }) {

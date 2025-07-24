@@ -65,3 +65,12 @@ model SongPreference {
 
   @@index([userId])
 }
+
+model EarlyAccessUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  @@map("early_access_users")
+}
